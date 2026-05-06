@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>도착지 설정</title>
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="pin-map.css">
+</head>
+<body>
+  <div class="pin-screen">
+
+    <!-- 카카오 지도 -->
+    <div id="map" class="map-container"></div>
+
+    <!-- 중앙 고정 핀 (도착지 = 파란색) -->
+    <div class="center-pin" aria-hidden="true">
+      <svg width="32" height="40" viewBox="0 0 32 40" fill="none">
+        <path d="M16 0C7.163 0 0 7.163 0 16c0 10 16 24 16 24s16-14 16-24C32 7.163 24.837 0 16 0z" fill="#066aeb"/>
+        <circle cx="16" cy="16" r="6" fill="#fff"/>
+      </svg>
+      <div class="pin-shadow"></div>
+    </div>
+
+    <!-- 뒤로가기 -->
+    <button class="btn-circle btn-back" onclick="history.back()" aria-label="뒤로 가기">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M15 19l-7-7 7-7" stroke="#1A1A1A" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+
+    <!-- 내 위치로 이동 버튼 -->
+    <button class="btn-circle btn-locate" id="btn-locate" aria-label="현재 위치로 이동">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="3" stroke="#4f5763" stroke-width="2"/>
+        <path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="#4f5763" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+
+    <!-- 하단 시트 (도착지 스타일) -->
+    <div class="pin-sheet pin-sheet--dest" role="main">
+      <p class="dest-name" id="dest-name">위치를 선택해 주세요</p>
+      <p class="dest-addr" id="dest-addr">지도를 드래그해서 도착지를 설정하세요</p>
+      <button class="btn-set-dest" id="btn-set-dest">도착지로 설정</button>
+    </div>
+
+  </div>
+
+  <div class="sr-only" id="sr-announce" role="status" aria-live="assertive" aria-atomic="true"></div>
+
+  <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=93fb3b70693c7f3aba7c97dd76479fd7&libraries=services&autoload=false"
+    onerror="console.error('[Kakao SDK script 로드 실패]')"></script>
+  <script src="../js/pin-dest.js"></script>
+</body>
+</html>

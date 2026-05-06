@@ -251,4 +251,32 @@
 .btn-respeak:focus-visible,
 .btn-confirm:focus-visible { outline: 3px solid #3B82F6; outline-offset: 2px; }
 
+/* =========================================
+   경로 안내 시작 버튼
+   ========================================= */
+.route-start-wrap {
+  padding: 12px 25px 8px;
+}
+.btn-route-start {
+  display: block;
+  width: 100%;
+  height: 52px;
+  background: #056AEC;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  cursor: pointer;
+  animation: slideDown 0.2s ease-out;
+}
+.btn-route-start:active  { opacity: .85; }
+.btn-route-start:focus-visible { outline: 3px solid #3B82F6; outline-offset: 2px; }
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* sr-only, btn-back 등 공통 스타일은 ../style.css 참고 */

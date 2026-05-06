@@ -1,0 +1,202 @@
+/* =========================================
+   pin-map.css — 출발지/도착지 핀 설정 화면 공용
+   ========================================= */
+
+.pin-screen {
+  width: 100%;
+  max-width: 402px;
+  height: 100svh;
+  max-height: 874px;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  background: #dce9f1;
+}
+
+/* 카카오 지도 */
+.map-container {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* 중앙 고정 핀 */
+.center-pin {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  z-index: 10;
+}
+.pin-shadow {
+  width: 12px;
+  height: 4px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 50%;
+  margin-top: 2px;
+}
+
+/* 지도 위 플로팅 원형 버튼 */
+.btn-circle {
+  position: absolute;
+  width: 43px;
+  height: 43px;
+  border-radius: 50%;
+  background: #fff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,.18);
+  cursor: pointer;
+  z-index: 20;
+}
+.btn-circle:active { opacity: .85; }
+.btn-back   { top: 56px;  left: 27px; }
+.btn-locate { bottom: 250px; right: 16px; }
+
+/* 예약하기 버튼 */
+.btn-reserve {
+  position: absolute;
+  bottom: 252px;
+  left: 25px;
+  height: 37px;
+  padding: 0 22px;
+  background: #4f5763;
+  color: #fff;
+  border: none;
+  border-radius: 23px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  cursor: pointer;
+  z-index: 20;
+}
+.btn-reserve:active { opacity: .85; }
+
+/* ── 출발지 전용: 핀 색상 재정의 ─────────── */
+/* (기본값 gray, pin-dest.html은 blue 핀 사용) */
+
+/* ─────────────────────────────────────────
+   하단 시트 — 58-105 기준 (235px)
+   ───────────────────────────────────────── */
+.pin-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  border-radius: 25px 25px 0 0;
+  border-top: 0.5px solid #e0e0e0;
+  box-shadow: 0 -4px 12px rgba(0,0,0,.08);
+  padding: 28px 31px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  z-index: 20;
+}
+
+/* 주소 행 */
+.addr-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 46px;
+}
+.dot {
+  flex-shrink: 0;
+  width: 6.3px;
+  height: 6.3px;
+  border-radius: 50%;
+}
+.dot-gray { background: #909090; }
+.dot-red  { background: #e03131; }
+
+.addr-text {
+  font-size: 20px;
+  color: #111;
+  letter-spacing: -0.38px;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.addr-label { color: #111; }
+.addr-placeholder {
+  font-size: 20px;
+  color: #ababab;
+  letter-spacing: -0.38px;
+}
+
+.sheet-divider {
+  height: 1px;
+  background: #e8e8e8;
+  margin: 0 -4px;
+}
+
+/* 칩 행 */
+.chip-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+  flex-wrap: nowrap;
+}
+.chip {
+  height: 37px;
+  padding: 0 16px;
+  background: #f5f6f7;
+  border-radius: 23px;
+  font-size: 15px;
+  color: #555;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  border: none;
+}
+.chip-outline {
+  background: #fff;
+  border: 1px solid #d9d9d9;
+  color: #333;
+}
+
+/* ─────────────────────────────────────────
+   하단 시트 — 55-352 기준 (도착지, 183px)
+   ───────────────────────────────────────── */
+.pin-sheet--dest {
+  padding: 24px 25px 20px;
+  gap: 4px;
+}
+.dest-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111;
+  letter-spacing: -0.342px;
+  line-height: 1.5;
+}
+.dest-addr {
+  font-size: 16px;
+  color: #777;
+  letter-spacing: -0.304px;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+.btn-set-dest {
+  display: block;
+  width: 100%;
+  height: 53px;
+  background: #066aeb;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 18px;
+  letter-spacing: -0.342px;
+  cursor: pointer;
+  margin-top: 8px;
+}
+.btn-set-dest:active { opacity: .85; }
+.btn-set-dest:focus-visible { outline: 3px solid #3B82F6; outline-offset: 2px; }

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>택시 호출</title>
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="taxi-call.css">
+</head>
+<body>
+  <div class="call-screen">
+
+    <!-- 카카오맵 (경로 표시) -->
+    <div id="map" class="map-container"></div>
+
+    <!-- 추천경로 배지 -->
+    <div class="recommended-badge" aria-hidden="true">추천경로</div>
+
+    <!-- 상단 출발지 > 도착지 바 -->
+    <div class="route-bar">
+      <span class="route-bar-close" role="button" tabindex="0" aria-label="닫기"
+            onclick="history.back()">✕</span>
+      <span class="route-bar-start" id="bar-start">출발지</span>
+      <span class="route-bar-arrow" aria-hidden="true">›</span>
+      <span class="route-bar-dest" id="bar-dest">도착지</span>
+    </div>
+
+    <!-- 하단 시트 -->
+    <div class="call-sheet" role="main">
+
+      <!-- 택시 타입 행 -->
+      <div class="type-row">
+        <img class="taxi-icon"
+             src="https://www.figma.com/api/mcp/asset/a00f020e-94b8-419f-82d7-2ba3bfd14dad"
+             alt="" aria-hidden="true">
+        <p class="type-name" id="type-name">일반호출</p>
+        <button class="type-dropdown" aria-label="택시 종류 변경">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M6 9l6 6 6-6" stroke="#555" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <button class="help-btn" aria-label="도움말">?</button>
+      </div>
+
+      <!-- 차종 선택 행 -->
+      <div class="size-row" role="group" aria-label="차종 선택">
+        <div class="divider-line"></div>
+        <div class="size-tabs">
+          <button class="size-tab size-tab-active" id="tab-mid" aria-pressed="true">중형</button>
+          <span class="size-sep" aria-hidden="true">|</span>
+          <button class="size-tab" id="tab-large" aria-pressed="false">대형</button>
+        </div>
+        <div class="divider-line"></div>
+      </div>
+
+      <!-- 결제 영역 -->
+      <div class="payment-section">
+        <div class="payment-row">
+          <div class="pay-left">
+            <img src="https://www.figma.com/api/mcp/asset/b7c58e9e-f8a7-4118-bf68-6aed4702aa7b"
+                 alt="" class="card-icon" aria-hidden="true">
+            <span class="pay-card">하나체크카드</span>
+          </div>
+          <div class="pay-right">
+            <span class="pay-link">쿠폰</span>
+            <span class="pay-sep" aria-hidden="true">|</span>
+            <span class="pay-link">포인트 0P</span>
+            <svg width="4" height="9" viewBox="0 0 4 9" fill="none" aria-hidden="true">
+              <path d="M1 1l2 3.5L1 8" stroke="#626770" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="divider-line"></div>
+
+        <div class="fare-row">
+          <button class="fare-left" aria-label="탑승자 정보">
+            본인탑승
+            <svg width="4" height="9" viewBox="0 0 4 9" fill="none" aria-hidden="true">
+              <path d="M1 1l2 3.5L1 8" stroke="#626770" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <div class="fare-right">
+            <span class="fare-label">
+              <span class="fare-info-icon" aria-hidden="true">ⓘ</span> 예상
+            </span>
+            <span class="fare-amount" id="fare-amount">4,800원</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 호출하기 버튼 -->
+      <button class="btn-call" id="btn-call">호출하기</button>
+
+    </div>
+  </div>
+
+  <div class="sr-only" id="sr-announce" role="status" aria-live="assertive" aria-atomic="true"></div>
+
+  <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=93fb3b70693c7f3aba7c97dd76479fd7&libraries=services&autoload=false"
+    onerror="console.error('[Kakao SDK script 로드 실패]')"></script>
+  <script src="../js/taxi-call.js"></script>
+</body>
+</html>

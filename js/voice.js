@@ -15,6 +15,8 @@ const $micArrive  = document.getElementById('mic-arrive');
 const $inputStart = document.getElementById('input-start');
 const $inputArrive= document.getElementById('input-arrive');
 
+const $routeWrap  = document.getElementById('route-start-wrap');
+const $btnRoute   = document.getElementById('btn-route-start');
 const $modal      = document.getElementById('modal-voice');
 const $modalDim   = document.getElementById('modal-dim');
 const $message    = document.getElementById('modal-message');
@@ -31,6 +33,15 @@ let currentTarget = null;   // 'start' | 'arrive'
 let recognition   = null;
 let isListening   = false;
 let lastResult    = '';
+
+/* =========================================================
+   경로 안내 버튼 표시 여부 갱신
+   ========================================================= */
+function updateRouteBtn() {
+  const hasStart  = $inputStart.value.trim() !== '';
+  const hasArrive = $inputArrive.value.trim() !== '';
+  $routeWrap.hidden = !(hasStart && hasArrive);
+}
 
 /* =========================================================
    스크린리더 알림
@@ -211,6 +222,7 @@ function confirmResult() {
   }
 
   closeModal();
+  updateRouteBtn();
 }
 
 /* =========================================================
@@ -259,5 +271,11 @@ document.querySelectorAll('.btn-arrive').forEach(btn => {
     $inputArrive.value = name;
     $inputArrive.style.color = '#111827';
     announce(`도착지가 ${name}(으)로 설정되었습니다.`);
+    updateRouteBtn();
   });
+});
+
+// 경로 안내 시작 버튼
+$btnRoute.addEventListener('click', () => {
+  window.location.href = 'route.html';
 });

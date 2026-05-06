@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>택시 종류 선택</title>
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="taxi-type.css">
+</head>
+<body>
+  <div class="taxi-screen">
+
+    <!-- 지도 (카카오맵) -->
+    <div id="map" class="map-container"></div>
+
+    <!-- 상단 출발지 > 도착지 바 -->
+    <div class="route-bar">
+      <span class="route-bar-icon" aria-hidden="true">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+          <circle cx="7" cy="7" r="6" stroke="#555" stroke-width="1.5"/>
+          <circle cx="7" cy="7" r="2.5" fill="#555"/>
+        </svg>
+      </span>
+      <span class="route-bar-start" id="bar-start">출발지</span>
+      <span class="route-bar-arrow" aria-hidden="true">›</span>
+      <span class="route-bar-dest" id="bar-dest">도착지</span>
+    </div>
+
+    <!-- 하단 시트 -->
+    <div class="taxi-sheet" role="main">
+
+      <!-- 탭 스위처 -->
+      <div class="tab-row" role="tablist">
+        <button class="tab tab-active" role="tab" aria-selected="true" id="tab-all">모든 호출</button>
+        <button class="tab" role="tab" aria-selected="false" id="tab-schedule">원하는 시간으로 호출</button>
+      </div>
+
+      <!-- 택시 목록 -->
+      <ul class="taxi-list" role="list">
+
+        <li class="taxi-item" role="listitem" data-type="블루파트너스" tabindex="0">
+          <div class="taxi-info">
+            <p class="taxi-name">블루파트너스</p>
+            <p class="taxi-desc">부르면 바로 배차되는 제휴 택시</p>
+          </div>
+          <p class="taxi-price">예상 7,800원</p>
+        </li>
+
+        <li class="taxi-divider" aria-hidden="true"></li>
+
+        <li class="taxi-item" role="listitem" data-type="일반호출" tabindex="0">
+          <div class="taxi-info">
+            <p class="taxi-name">일반호출</p>
+            <p class="taxi-desc">주변 택시 호출</p>
+          </div>
+          <p class="taxi-price">예상 4,800원</p>
+        </li>
+
+        <li class="taxi-divider" aria-hidden="true"></li>
+
+        <li class="taxi-item" role="listitem" data-type="벤티 예약" tabindex="0">
+          <div class="taxi-info">
+            <p class="taxi-name">벤티 예약</p>
+            <div class="taxi-badge-row">
+              <span class="taxi-badge">30분 ~ 2주 뒤 출발</span>
+              <span class="taxi-sub">대형 차량</span>
+            </div>
+          </div>
+        </li>
+
+        <li class="taxi-divider" aria-hidden="true"></li>
+
+        <li class="taxi-item" role="listitem" data-type="블루파트너스 예약" tabindex="0">
+          <div class="taxi-info">
+            <p class="taxi-name">블루파트너스 예약</p>
+            <div class="taxi-badge-row">
+              <span class="taxi-badge">10분 ~ 1시간 뒤 출발</span>
+              <span class="taxi-sub">차종 선택 가능</span>
+            </div>
+          </div>
+        </li>
+
+        <li class="taxi-divider" aria-hidden="true"></li>
+
+        <li class="taxi-item" role="listitem" data-type="블랙 예약" tabindex="0">
+          <div class="taxi-info">
+            <p class="taxi-name">블랙 예약</p>
+            <div class="taxi-badge-row">
+              <span class="taxi-badge">10분 ~ 1시간 뒤 출발</span>
+              <span class="taxi-sub">차종 선택 가능</span>
+            </div>
+          </div>
+        </li>
+
+      </ul>
+    </div>
+  </div>
+
+  <div class="sr-only" id="sr-announce" role="status" aria-live="assertive" aria-atomic="true"></div>
+
+  <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=93fb3b70693c7f3aba7c97dd76479fd7&libraries=services&autoload=false"
+    onerror="console.error('[Kakao SDK script 로드 실패]')"></script>
+  <script src="../js/taxi-type.js"></script>
+</body>
+</html>
