@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>음성 검색</title>
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="voice.css">
+</head>
+<body>
+
+  <!-- 메인 검색 화면 -->
+  <div id="screen-main" class="screen">
+
+    <!-- 상단 뒤로가기 -->
+    <header class="top-bar">
+      <button class="btn-back" aria-label="뒤로 가기">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M15 19l-7-7 7-7" stroke="#1A1A1A" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </header>
+
+    <!-- 검색창 영역 -->
+    <div class="search-area">
+
+      <!-- 출발지 검색창 -->
+      <div class="search-row" id="row-start">
+        <span class="search-dot dot-gray" aria-hidden="true"></span>
+        <input
+          type="text"
+          id="input-start"
+          class="search-input"
+          placeholder="출발지 검색"
+          aria-label="출발지 검색"
+          readonly
+        />
+        <button class="btn-mic" id="mic-start" aria-label="출발지 음성 검색">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <rect x="9" y="2" width="6" height="11" rx="3" fill="#909090"/>
+            <path d="M5 10a7 7 0 0 0 14 0" stroke="#909090" stroke-width="2" stroke-linecap="round"/>
+            <line x1="12" y1="19" x2="12" y2="22" stroke="#909090" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- 도착지 검색창 -->
+      <div class="search-row" id="row-arrive">
+        <span class="search-dot dot-red" aria-hidden="true"></span>
+        <input
+          type="text"
+          id="input-arrive"
+          class="search-input"
+          placeholder="도착지 검색"
+          aria-label="도착지 검색"
+          readonly
+        />
+        <button class="btn-mic" id="mic-arrive" aria-label="도착지 음성 검색">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <rect x="9" y="2" width="6" height="11" rx="3" fill="#909090"/>
+            <path d="M5 10a7 7 0 0 0 14 0" stroke="#909090" stroke-width="2" stroke-linecap="round"/>
+            <line x1="12" y1="19" x2="12" y2="22" stroke="#909090" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- 구분선 + 최근 내역 -->
+    <div class="divider"></div>
+    <div class="recent-header">
+      <span class="recent-title">최근 내역</span>
+      <button class="recent-edit" aria-label="최근 내역 편집">편집</button>
+    </div>
+
+    <!-- 최근 내역 목록 -->
+    <ul class="recent-list" role="list" aria-label="최근 검색 내역">
+      <li class="recent-item" role="listitem">
+        <div class="recent-info">
+          <span class="recent-name">성신여자대학교 성미료</span>
+          <span class="recent-addr">서울 성북구 보문로30사실 41-39</span>
+        </div>
+        <button class="btn-arrive" aria-label="성신여자대학교 성미료 도착지로 설정">도착</button>
+      </li>
+      <li class="recent-item" role="listitem">
+        <div class="recent-info">
+          <span class="recent-name">성신여자대학교 미디어정보관</span>
+          <span class="recent-addr">서울 성북구 보문로30사실 41-39</span>
+        </div>
+        <button class="btn-arrive" aria-label="성신여자대학교 미디어정보관 도착지로 설정">도착</button>
+      </li>
+      <li class="recent-item" role="listitem">
+        <div class="recent-info">
+          <span class="recent-name">메가MGC커피 서현웰빙점</span>
+          <span class="recent-addr">서울 성북구 보문로30사실 41-39</span>
+        </div>
+        <button class="btn-arrive" aria-label="메가MGC커피 서현웰빙점 도착지로 설정">도착</button>
+      </li>
+      <li class="recent-item" role="listitem">
+        <div class="recent-info">
+          <span class="recent-name">현대백화점 판교점</span>
+          <span class="recent-addr">서울 성북구 보문로30사실 41-39</span>
+        </div>
+        <button class="btn-arrive" aria-label="현대백화점 판교점 도착지로 설정">도착</button>
+      </li>
+      <li class="recent-item" role="listitem">
+        <div class="recent-info">
+          <span class="recent-name">중앙에너비스 에너비스 (ENERVIS)</span>
+          <span class="recent-addr">서울 성북구 보문로30사실 41-39</span>
+        </div>
+        <button class="btn-arrive" aria-label="중앙에너비스 도착지로 설정">도착</button>
+      </li>
+      <li class="recent-item" role="listitem">
+        <div class="recent-info">
+          <span class="recent-name">성신여자대학교 돈암수정캠퍼스</span>
+          <span class="recent-addr">서울 성북구 보문로30사실 41-39</span>
+        </div>
+        <button class="btn-arrive" aria-label="성신여자대학교 돈암수정캠퍼스 도착지로 설정">도착</button>
+      </li>
+    </ul>
+  </div>
+
+  <!-- 음성인식 모달 (OFF 상태 — 듣기 전) -->
+  <div id="modal-voice" class="voice-modal hidden" role="dialog"
+       aria-modal="true" aria-label="음성 검색">
+
+    <!-- 배경 딤 -->
+    <div class="modal-dim" id="modal-dim"></div>
+
+    <!-- 모달 시트 -->
+    <div class="modal-sheet">
+
+      <!-- 안내 메시지 -->
+      <p id="modal-message" class="modal-message" aria-live="polite">
+        (출발/도착) 장소명을 말해보세요.
+      </p>
+
+      <!-- 음성 인식 결과 텍스트 (듣는 중일 때만 표시) -->
+      <p id="modal-result" class="modal-result hidden" aria-live="polite" aria-atomic="true">
+        ...
+      </p>
+
+      <!-- 마이크 버튼 -->
+      <button id="btn-speak" class="speak-btn speak-btn--off"
+              aria-label="음성 인식 시작">
+        <svg class="mic-icon" width="80" height="80" viewBox="0 0 80 80" fill="none">
+          <rect x="30" y="8" width="20" height="36" rx="10" fill="currentColor"/>
+          <path d="M16 34c0 13.255 10.745 24 24 24s24-10.745 24-24"
+                stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+          <line x1="40" y1="60" x2="40" y2="72"
+                stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+        </svg>
+      </button>
+
+      <!-- 버튼 행 -->
+      <div class="modal-actions">
+        <button id="btn-respeak" class="btn-respeak" aria-label="다시 말하기">
+          다시 말하기
+        </button>
+        <button id="btn-confirm" class="btn-confirm" aria-label="검색 결과 확정하기">
+          확정하기
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 스크린리더 전용 상태 알림 -->
+  <div class="sr-only" id="sr-status" role="status" aria-live="assertive"></div>
+
+  <script src="voice.js"></script>
+</body>
+</html>

@@ -1,0 +1,252 @@
+/* =========================================
+   voice.css — 음성 검색 화면 전용 스타일
+   ========================================= */
+
+/* 화면 전체 */
+.screen {
+  width: 100%;
+  max-width: 402px;
+  min-height: 100vh;
+  margin: 0 auto;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* 검색창 영역 */
+.search-area {
+  padding: 12px 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.search-row {
+  display: flex;
+  align-items: center;
+  background: #F5F6F7;
+  border-radius: 26px;
+  padding: 0 14px;
+  height: 45px;
+  gap: 8px;
+}
+.search-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot-gray { background: #909090; }
+.dot-red  { background: #E53935; }
+
+.search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 16px;
+  color: #909090;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+}
+.search-input:focus { color: #111827; }
+
+.btn-mic {
+  width: 32px; height: 32px;
+  border: none; background: none;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; border-radius: 50%;
+  flex-shrink: 0;
+}
+.btn-mic:active { background: #E5E7EB; }
+.btn-mic:focus-visible { outline: 3px solid #3B82F6; outline-offset: 2px; }
+
+/* 구분선 */
+.divider {
+  height: 10px;
+  background: #F7F8F8;
+  margin: 4px 0;
+}
+
+/* 최근 내역 헤더 */
+.recent-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 25px 8px;
+}
+.recent-title {
+  font-size: 16px;
+  color: #777;
+}
+.recent-edit {
+  font-size: 16px;
+  color: #777;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+.recent-edit:focus-visible { outline: 3px solid #3B82F6; }
+
+/* 최근 내역 목록 */
+.recent-list {
+  list-style: none;
+  padding: 0 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.recent-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid #F3F4F6;
+}
+.recent-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+.recent-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.recent-addr {
+  font-size: 14px;
+  color: #777;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.btn-arrive {
+  flex-shrink: 0;
+  width: 50px; height: 33px;
+  border: 1px solid #D9D9D9;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 15px;
+  color: #111;
+  cursor: pointer;
+  margin-left: 12px;
+}
+.btn-arrive:active { background: #F3F4F6; }
+.btn-arrive:focus-visible { outline: 3px solid #3B82F6; }
+
+/* =========================================
+   음성 모달
+   ========================================= */
+.voice-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.voice-modal.hidden { display: none; }
+
+/* 배경 딤 */
+.modal-dim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.35);
+}
+
+/* 모달 시트 */
+.modal-sheet {
+  position: relative;
+  background: #fff;
+  border-radius: 25px 25px 0 0;
+  box-shadow: 0 -10px 18px rgba(0,0,0,.06);
+  padding: 36px 25px 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  min-height: 360px;
+}
+
+/* 안내 메시지 */
+.modal-message {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* 음성 인식 결과 */
+.modal-result {
+  font-size: 20px;
+  font-weight: 700;
+  color: #056AEC;
+  text-align: center;
+  min-height: 30px;
+}
+.modal-result.hidden { display: none; }
+
+/* 마이크 버튼 — OFF 상태 */
+.speak-btn {
+  width: 190px; height: 190px;
+  border-radius: 50%;
+  border: none;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+}
+.speak-btn--off {
+  background: #F0F0F0;
+  color: #909090;
+  box-shadow: 0 0 0 2px #D0D0D0;
+}
+.speak-btn--on {
+  background: #056AEC;
+  color: #fff;
+  box-shadow: 0 0 0 20px rgba(5,106,236,.15),
+              0 0 0 36px rgba(5,106,236,.07);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 20px rgba(5,106,236,.15), 0 0 0 36px rgba(5,106,236,.07); }
+  50%       { box-shadow: 0 0 0 28px rgba(5,106,236,.18), 0 0 0 48px rgba(5,106,236,.09); }
+}
+.speak-btn:active { transform: scale(.96); }
+.speak-btn:focus-visible { outline: 3px solid #3B82F6; outline-offset: 4px; }
+
+.mic-icon { pointer-events: none; }
+
+/* 버튼 행 */
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+.btn-respeak, .btn-confirm {
+  flex: 1; height: 52px;
+  border-radius: 4px;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.btn-respeak {
+  background: #056AEC;
+  color: #fff;
+  border: none;
+}
+.btn-confirm {
+  background: #fff;
+  color: #056AEC;
+  border: 1px solid #534F4F;
+}
+.btn-respeak:active, .btn-confirm:active { opacity: .8; }
+.btn-respeak:focus-visible,
+.btn-confirm:focus-visible { outline: 3px solid #3B82F6; outline-offset: 2px; }
+
+/* sr-only, btn-back 등 공통 스타일은 ../style.css 참고 */

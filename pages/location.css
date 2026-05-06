@@ -1,0 +1,299 @@
+/* =========================================
+   location.css
+   위치 지정 화면 전용 스타일
+   ========================================= */
+
+:root {
+  --pin-dark: #2D2D2D;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --sheet-h: 180px;
+}
+
+/* =========================================
+   App
+   ========================================= */
+
+.app {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* =========================================
+   Map area
+   ========================================= */
+
+.map-wrap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.map {
+  width: 100%;
+  height: 100%;
+}
+
+/* =========================================
+   중앙 고정 핀
+   ========================================= */
+
+.center-pin {
+  position: absolute;
+  left: 50%;
+  top: calc((100% - var(--sheet-h)) / 2 + 26px);
+
+  transform: translate(-50%, -100%);
+
+  z-index: 50;
+
+  pointer-events: none;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  transition:
+    transform 0.18s ease-out,
+    filter 0.18s ease-out;
+}
+
+.center-pin.lifting {
+  transform: translate(-50%, -108%) scale(1.04);
+
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.3));
+}
+
+.pin-label {
+  background: var(--pin-dark);
+  color: var(--white);
+
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 6px;
+
+  line-height: 1;
+  white-space: nowrap;
+
+  padding: 11px 26px 11px 32px;
+
+  border-radius: 10px;
+
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.pin-stem {
+  width: 2.5px;
+  height: 30px;
+
+  background: var(--pin-dark);
+
+  flex-shrink: 0;
+}
+
+.pin-dot {
+  width: 10px;
+  height: 10px;
+
+  border-radius: 50%;
+
+  background: var(--pin-dark);
+
+  flex-shrink: 0;
+
+  box-shadow: 0 0 0 3px rgba(45, 45, 45, 0.15);
+}
+
+/* =========================================
+   현재 위치 버튼
+   ========================================= */
+
+.fab-my-location {
+  position: absolute;
+
+  right: 14px;
+  bottom: calc(var(--sheet-h) + 14px);
+
+  z-index: 90;
+
+  width: 44px;
+  height: 44px;
+
+  border: none;
+  border-radius: 12px;
+
+  background: var(--white);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.fab-my-location:active {
+  background: var(--g100);
+}
+
+/* =========================================
+   Bottom Sheet
+   ========================================= */
+
+.bottom-sheet {
+  position: absolute;
+
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  z-index: 100;
+
+  height: var(--sheet-h);
+
+  background: var(--white);
+
+  border-radius: 18px 18px 0 0;
+
+  padding: 10px 18px calc(10px + var(--safe-b));
+
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  box-shadow: 0 -3px 18px rgba(0, 0, 0, 0.1);
+}
+
+.sheet-handle {
+  display: flex;
+  justify-content: center;
+
+  padding-bottom: 2px;
+}
+
+.sheet-handle span {
+  width: 32px;
+  height: 4px;
+
+  border-radius: 2px;
+
+  background: var(--g200);
+}
+
+/* =========================================
+   위치 정보
+   ========================================= */
+
+.location-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.location-badge {
+  flex-shrink: 0;
+
+  padding: 3px 9px;
+
+  border-radius: 5px;
+
+  background: var(--blue);
+  color: var(--white);
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.location-name {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+
+  color: var(--g900);
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* =========================================
+   안내 영역
+   ========================================= */
+
+.announce-region {
+  min-height: 40px;
+
+  padding: 10px 12px;
+
+  border: 1px solid var(--g200);
+  border-radius: 10px;
+
+  background: var(--g50);
+
+  color: var(--g700);
+
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* =========================================
+   버튼
+   ========================================= */
+
+.action-row {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-action {
+  flex: 1;
+
+  height: 44px;
+
+  border: none;
+  border-radius: 10px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+
+  cursor: pointer;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-confirm-location {
+  background: var(--kakao-yellow);
+  color: var(--kakao-dark);
+}
+
+.btn-confirm-location:active {
+  background: #edda00;
+}
+
+/* =========================================
+   접근성
+   ========================================= */
+
+@media (prefers-contrast: high) {
+  .announce-region {
+    border-width: 2px;
+    border-color: var(--g900);
+    color: var(--g900);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .center-pin.lifting {
+    transition: none;
+  }
+}
