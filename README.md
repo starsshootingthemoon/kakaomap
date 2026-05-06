@@ -7,10 +7,16 @@
 
 ## 기술 스택
 
-Visual Studio Code, Git, GitHub
-HTML, CSS, JavaScript
-Kakao Maps API (지도·역지오코딩·장소 검색)
-Web Speech API (음성 인식 / TTS)
+- Visual Studio Code
+- Git / GitHub
+- HTML / CSS / JavaScript
+- Kakao Maps API
+  - 지도
+  - 역지오코딩
+  - 장소 검색
+- Web Speech API
+  - 음성 인식
+  - TTS
 
 ---
 
@@ -22,6 +28,7 @@ voice → pin-start → pin-dest → taxi-type → taxi-call → route → walki
 
 ## 파일 구조
 
+```text
 2026 HCI/
 ├── index.html                ← 앱 시작점
 ├── style.css                 ← 공통 스타일 (색상 변수, 리셋)
@@ -37,7 +44,7 @@ voice → pin-start → pin-dest → taxi-type → taxi-call → route → walki
 │   ├── boarding.html         ← 승하차 보조
 │   ├── location.html         ← 위치 지정 (핀 조정)
 │   ├── pin-map.css           ← 핀 설정 화면 공용 스타일
-│   └── (각 페이지별 .css)
+│   └── 각 페이지별 .css
 │
 └── js/
     ├── voice.js              ← 음성 인식·TTS, 경로 안내 시작 버튼 제어
@@ -49,6 +56,7 @@ voice → pin-start → pin-dest → taxi-type → taxi-call → route → walki
     ├── walking.js            ← 도보 네비게이션 TTS (방향·거리)
     ├── boarding.js           ← 승하차 보조 기능
     └── location.js           ← 위치 지정 기능
+```
 
 ---
 
