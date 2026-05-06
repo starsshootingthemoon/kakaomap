@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>경로 안내</title>
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="route.css">
+</head>
+<body>
+
+  <div class="route-screen">
+
+    <!-- 지도 영역 -->
+    <div class="map-area" aria-hidden="true">
+      <img
+        src="https://www.figma.com/api/mcp/asset/52d89eb9-1f60-4c87-9f07-7451616e497a"
+        alt=""
+        class="map-image"
+      />
+      <!-- 도착 예상 배지 -->
+      <div class="arrival-badge" aria-hidden="true">
+        <span class="badge-label">도착</span>
+        <span class="badge-time">3분 예상</span>
+      </div>
+    </div>
+
+    <!-- 하단 안내 시트 -->
+    <div class="route-sheet" role="main">
+
+      <h1 class="route-title">출발지까지 경로를 안내할까요?</h1>
+      <p class="route-subtitle">지정 목적지: 성신여대 정문 앞 대로변</p>
+
+      <!-- 이동 일러스트 (movement_start 컴포넌트) [택시][...][사람] -->
+      <div class="movement-start" aria-hidden="true">
+        <!-- 택시 -->
+        <div class="ms-taxi-wrap">
+          <img src="https://www.figma.com/api/mcp/asset/40ef880e-5566-40b0-a53b-19673b2283ba" alt="" class="ms-taxi-img">
+        </div>
+        <!-- 점선 (...) -->
+        <div class="ms-dots">
+          <img src="https://www.figma.com/api/mcp/asset/973da842-0994-4dd6-ac6f-1ef48d738377" alt="">
+        </div>
+        <!-- 보행자 -->
+        <div class="ms-walk">
+          <img src="https://www.figma.com/api/mcp/asset/6d5468d4-3b57-4c9c-ae48-3e29e6772b58" alt="">
+        </div>
+      </div>
+
+      <!-- 버튼 -->
+      <div class="route-actions">
+        <button id="btn-start" class="btn-start">도보경로 안내 시작</button>
+        <button id="btn-skip"  class="btn-skip">건너뛰기</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 스크린리더 안내 -->
+  <div class="sr-only" id="sr-announce" role="status" aria-live="assertive" aria-atomic="true"></div>
+
+  <script src="../js/route.js"></script>
+</body>
+</html>

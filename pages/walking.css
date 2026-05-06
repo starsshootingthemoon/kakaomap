@@ -1,0 +1,114 @@
+/* =========================================
+   walking.css — 도보 경로 안내 화면
+   ========================================= */
+
+.walking-screen {
+  width: 100%;
+  max-width: 402px;
+  /* 피그마 기준 스마트폰 비율 402 × 874 */
+  height: 100svh;
+  max-height: 874px;
+  margin: 0 auto;
+  background: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 지도 영역 */
+.map-area {
+  position: absolute;
+  inset: 0;
+}
+.map-image {
+  position: absolute;
+  /* Figma: left:-186.7px, width:588.7px (402px 기준) */
+  left: -46.4%;
+  top: 0;
+  width: 146.4%;
+  height: auto;
+  min-height: 100%;
+}
+.route-overlay {
+  position: absolute;
+  left: 0;
+  top: 41%;
+  width: 95%;
+  height: auto;
+}
+.current-location {
+  position: absolute;
+  right: 10%;
+  top: 62%;
+  width: 43px;
+  height: 52px;
+  transform: rotate(5.68deg);
+}
+.location-arrow {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transform: scaleX(-1) rotate(-8.1deg);
+}
+
+/* =========================================
+   네비게이션 패널 (nav_first)
+   피그마: w-368, h-146, left:50%, top:681px
+   ========================================= */
+.nav-panel {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  /* Figma top:681 / 874 ≈ 78% */
+  top: 78%;
+  width: 368px;
+  height: 146px;
+  background: #056AEC;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+/* 방향 화살표 — 피그마 좌표 그대로 */
+/* container: left:53.72 top:39.92 w:19.765 h:67.152 */
+/* image: 70×73.64px rotated -106.4deg, overflow into panel */
+.nav-arrow {
+  position: absolute;
+  left: 53.72px;
+  top: 39.92px;
+  width: 19.765px;
+  height: 67.152px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+.nav-arrow-img {
+  width: 70px;
+  height: 73.64px;
+  object-fit: contain;
+  transform: rotate(-106.4deg);
+  filter: brightness(0) invert(1);
+}
+
+/* 안내 텍스트 — 피그마: left:121, top:50% */
+.nav-info {
+  position: absolute;
+  left: 121px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 234px;
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+}
+.nav-location {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.266px;
+  line-height: 1.5;
+}
+.nav-instruction {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.57px;
+  line-height: 1.5;
+}

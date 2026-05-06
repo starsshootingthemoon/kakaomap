@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>도보 경로 안내</title>
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="walking.css">
+</head>
+<body>
+
+  <div class="walking-screen">
+
+    <!-- 지도 + 경로 레이어 -->
+    <div class="map-area" aria-hidden="true">
+      <img
+        src="https://www.figma.com/api/mcp/asset/b734d3c2-2e27-47c3-88dc-3c21ad2fdcf7"
+        alt=""
+        class="map-image"
+      />
+      <img
+        src="https://www.figma.com/api/mcp/asset/d0ae0179-229f-4c0b-8342-61ba870259d8"
+        alt=""
+        class="route-overlay"
+      />
+      <div class="current-location">
+        <img
+          src="https://www.figma.com/api/mcp/asset/3b5a4bb5-dae6-4b5e-a1e2-652aabdea1f1"
+          alt=""
+          class="location-arrow"
+        />
+      </div>
+    </div>
+
+    <!-- 네비게이션 패널 (nav_first) -->
+    <div class="nav-panel" role="navigation" aria-label="경로 안내">
+      <div class="nav-arrow" aria-hidden="true">
+        <img
+          src="https://www.figma.com/api/mcp/asset/5abc23c0-939a-48b2-846c-754c5a717c8c"
+          alt=""
+          class="nav-arrow-img"
+        />
+      </div>
+      <div class="nav-info">
+        <p class="nav-location">현위치: 서울 성북구 돈암동 173-3</p>
+        <p class="nav-instruction">10m 이동,<br>왼쪽 완만한 곡선</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="sr-only" id="sr-announce" role="status" aria-live="assertive" aria-atomic="true"></div>
+
+  <script src="../js/walking.js"></script>
+</body>
+</html>

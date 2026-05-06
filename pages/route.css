@@ -1,0 +1,174 @@
+/* =========================================
+   route.css — 경로 안내 화면
+   ========================================= */
+
+.route-screen {
+  width: 100%;
+  max-width: 402px;
+  height: 100svh;
+  max-height: 874px;
+  margin: 0 auto;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* 지도 영역 */
+.map-area {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+.map-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* 도착 예상 배지 */
+.arrival-badge {
+  position: absolute;
+  left: 23px;
+  bottom: 130px;
+  display: flex;
+  align-items: stretch;
+  border-radius: 3px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}
+.badge-label {
+  background: #056AEC;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 5px 11px;
+}
+.badge-time {
+  background: #fff;
+  color: #111;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 5px 17px;
+}
+
+/* 하단 안내 시트 */
+.route-sheet {
+  flex-shrink: 0;
+  background: #fff;
+  border-radius: 25px 25px 0 0;
+  border-top: 0.5px solid #acacac;
+  box-shadow: 0 -4px 9px rgba(0,0,0,.06);
+  padding: 32px 20px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  height: 403px;
+}
+
+.route-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111;
+  text-align: center;
+  letter-spacing: -0.38px;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.route-subtitle {
+  font-size: 16px;
+  font-weight: 400;
+  color: #777;
+  text-align: center;
+  letter-spacing: -0.304px;
+  line-height: 1.5;
+}
+
+/* movement_start 컴포넌트 — [택시] [...] [사람] */
+.movement-start {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 127px;
+  flex-shrink: 0;
+}
+
+/* 택시 이미지 (crop) */
+.ms-taxi-wrap {
+  flex-shrink: 0;
+  width: 130px;
+  height: 90px;
+  overflow: hidden;
+  position: relative;
+}
+.ms-taxi-img {
+  position: absolute;
+  /* 컨테이너 130×90 기준으로 재계산 */
+  width: 973px;   /* 748.93% of 130 */
+  height: 2104px; /* 2337.39% of 90 */
+  left: -54px;    /* -41.56% of 130 */
+  top: -1363px;   /* -1514.18% of 90 */
+  max-width: none;
+}
+
+/* 점선 — 택시와 사람 사이 */
+.ms-dots {
+  flex-shrink: 0;
+  width: 28px;
+  height: 8px;
+  display: flex;
+  align-items: center;
+}
+.ms-dots img { width: 100%; height: 100%; display: block; object-fit: contain; }
+
+/* 보행자 아이콘 — 피그마 기준 127×127px 정사각형 */
+.ms-walk {
+  flex-shrink: 0;
+  width: 100px;
+  height: 100px;
+}
+.ms-walk img { width: 100%; height: 100%; display: block; object-fit: contain; }
+
+/* 버튼 행 */
+.route-actions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+.btn-start {
+  flex: 1;
+  min-width: 0;
+  height: 50px;
+  padding: 0 12px;
+  background: #056AEC;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-skip {
+  flex-shrink: 0;
+  height: 50px;
+  padding: 0 24px;
+  background: #fff;
+  color: #056AEC;
+  border: 0.5px solid #534F4F;
+  border-radius: 4px;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.342px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-start:active { opacity: .85; }
+.btn-skip:active  { background: #F5F6F7; }
+.btn-start:focus-visible,
+.btn-skip:focus-visible { outline: 3px solid #3B82F6; outline-offset: 2px; }

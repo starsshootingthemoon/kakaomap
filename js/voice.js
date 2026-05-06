@@ -169,6 +169,22 @@ function startListening() {
   }
 }
 
+function speakThenListen() {
+  const msg = currentTarget === 'start'
+    ? '출발지 장소명을 말해보세요.'
+    : '도착지 장소명을 말해보세요.';
+
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(msg);
+    utter.lang = 'ko-KR';
+    utter.onend = () => startListening();
+    window.speechSynthesis.speak(utter);
+  } else {
+    startListening();
+  }
+}
+
 function stopListening() {
   if (recognition && isListening) {
     recognition.stop();
@@ -208,10 +224,10 @@ $micArrive.addEventListener('click', () => openModal('arrive'));
 $inputStart.addEventListener('click',  () => openModal('start'));
 $inputArrive.addEventListener('click', () => openModal('arrive'));
 
-// 마이크 큰 버튼
+// 마이크 큰 버튼 (OFF → TTS 재생 후 녹음 시작 / ON → 중지)
 $btnSpeak.addEventListener('click', () => {
   if (isListening) stopListening();
-  else startListening();
+  else speakThenListen();
 });
 
 // 다시 말하기
@@ -219,7 +235,7 @@ $btnRespeak.addEventListener('click', () => {
   lastResult = '';
   $result.textContent = '...';
   $result.classList.add('hidden');
-  startListening();
+  speakThenListen();
 });
 
 // 확정하기
