@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>HCItaxi Prototype</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #c8c8c8;
+      display: flex; justify-content: center; align-items: center;
+      min-height: 100vh;
+      font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
+    }
+
+    /* ── 폰 프레임 */
+    .phone {
+      width: 402px; height: 874px;
+      position: relative; overflow: hidden;
+      background: white;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.35);
+      border-radius: 40px;
+    }
+
+    /* ── 페이지 */
+    .page { position: absolute; inset: 0; background: white; display: none; overflow: hidden; }
+    .page.active { display: block; }
+
+    /* ── 공통: 뒤로가기 */
+    .back-btn {
+      position: absolute; left: 22px; top: 56px;
+      width: 28px; height: 28px;
+      cursor: pointer; z-index: 2;
+      display: flex; align-items: center; justify-content: center;
+      background: none; border: none;
+    }
+
+    /* ── 공통: 검색바 */
+    .search-bar {
+      position: absolute; left: 25px; width: 352px; height: 45px;
+      background: #f5f6f7; border-radius: 26px; overflow: hidden;
+    }
+    .dot { position: absolute; width: 8px; height: 8px; left: 13px; top: 18.5px; border-radius: 50%; }
+    .dot-gray { background: #7b7b7b; }
+    .dot-red  { background: #e33c3c; }
+
+    .bar-text {
+      position: absolute; left: 32px; top: 7.5px;
+      font-size: 20px; line-height: 1.5; letter-spacing: -0.38px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: 268px; pointer-events: none;
+    }
+    .bar-text.placeholder { color: #909090; }
+    .bar-text.filled      { color: #111; font-weight: 600; }
+
+    /* ── 검색바 안 마이크 버튼 */
+    .mic-sm {
+      position: absolute; right: 9px; top: 6px;
+      width: 32px; height: 32px;
+      background: #2d354c; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; border: none; padding: 0;
+    }
+
+    /* ── 구분선 */
+    .divider { position: absolute; left: 0; top: 241.9px; width: 402px; height: 10.2px; background: #f7f8f8; }
+
+    /* ── 최근 내역 */
+    .label-recent { position: absolute; left: 25px; top: 260.8px; font-size: 16px; color: #777; letter-spacing: -0.304px; line-height: 1.5; }
+    .label-edit   { position: absolute; left: 345.3px; top: 260.8px; font-size: 16px; color: #777; letter-spacing: -0.304px; line-height: 1.5; cursor: pointer; }
+    .history-item { position: absolute; left: 25px; width: 352px; height: 51px; cursor: pointer; }
+    .history-item .hi-name { position: absolute; top: 0; font-size: 18px; font-weight: 500; color: #111; letter-spacing: -0.342px; line-height: 1.5; white-space: nowrap; }
+    .history-item .hi-addr { position: absolute; top: 27px; font-size: 16px; color: #777; letter-spacing: -0.304px; line-height: 1.5; white-space: nowrap; }
+    .history-item .hi-badge {
+      position: absolute; right: 0; top: 9px;
+      width: 50px; height: 33px;
+      border: 1px solid #d9d9d9; border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; color: #111;
+    }
+
+    /* ═══ LISTENING 전용 ══════════════════════════════════════ */
+    .dim-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.45); z-index: 10; cursor: pointer; }
+
+    .voice-modal {
+      position: absolute; bottom: 0; left: -1px;
+      width: 403px; height: 440px;
+      background: white; border-radius: 24.689px 24.689px 0 0;
+      box-shadow: 0 -6px 28px rgba(0,0,0,0.09);
+      z-index: 20;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 28px 24px 24px;
+    }
+
+    .modal-guide {
+      font-size: 24px; font-weight: 700; letter-spacing: -0.456px;
+      text-align: center; line-height: 1.5; color: #111;
+      transition: color 0.25s ease; margin-bottom: 6px;
+    }
+    .modal-guide.is-on { color: rgba(0,0,0,0.32); }
+
+    .modal-result {
+      font-size: 20px; font-weight: 700; color: #046bed;
+      letter-spacing: -0.38px; text-align: center;
+      min-height: 30px; line-height: 1.5;
+      margin-bottom: 4px; word-break: keep-all; padding: 0 12px;
+      max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    .modal-mic-area { flex: 1; display: flex; align-items: center; justify-content: center; }
+
+    .mic-big-wrap {
+      width: 210px; height: 210px;
+      position: relative; display: flex; align-items: center; justify-content: center;
+    }
+
+    .pulse-ring {
+      position: absolute; border-radius: 50%;
+      background: rgba(253,235,6,0.22);
+      animation: pulseOut 2s ease-out infinite;
+      animation-play-state: paused;
+      opacity: 0; pointer-events: none;
+    }
+    .pulse-ring.r1 { width: 210px; height: 210px; animation-delay: 0s; }
+    .pulse-ring.r2 { width: 210px; height: 210px; animation-delay: 0.55s; }
+    .pulse-ring.r3 { width: 210px; height: 210px; animation-delay: 1.1s; }
+    @keyframes pulseOut {
+      0%   { transform: scale(0.65); opacity: 0.75; }
+      100% { transform: scale(1.45); opacity: 0; }
+    }
+
+    .mic-circle {
+      width: 165px; height: 165px; border-radius: 50%;
+      background: #2d354c;
+      display: flex; align-items: center; justify-content: center;
+      position: relative; z-index: 1; cursor: pointer; border: none;
+      transition: box-shadow 0.3s ease;
+    }
+    .mic-circle.is-on {
+      box-shadow: 0 0 0 8px rgba(253,235,6,0.55), 0 0 0 18px rgba(253,235,6,0.28), 0 0 0 32px rgba(253,235,6,0.10);
+      animation: micPulse 1.25s ease-in-out infinite;
+    }
+    @keyframes micPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+    .modal-btns { display: flex; gap: 10px; width: 100%; margin-top: 10px; transition: opacity 0.2s; }
+    .modal-btns.hidden { opacity: 0; pointer-events: none; }
+
+    .btn-respeak {
+      flex: 1; height: 52px;
+      background: #056aec; border: none; border-radius: 6px;
+      font-family: inherit; font-size: 17px; font-weight: 700;
+      color: white; cursor: pointer; letter-spacing: -0.3px;
+    }
+    .btn-select {
+      flex: 1; height: 52px;
+      background: white; border: 1px solid #b0b0b0; border-radius: 6px;
+      font-family: inherit; font-size: 17px; font-weight: 600;
+      color: #111; cursor: pointer; letter-spacing: -0.3px;
+    }
+    .btn-select:disabled { color: #ccc; border-color: #ddd; cursor: not-allowed; }
+
+    /* ═══ RECOMMEND 공통 전용 ══════════════════════════════════ */
+    .rec-section { position: absolute; top: 222px; left: 25px; right: 25px; }
+    .rec-title { font-size: 26px; font-weight: 800; color: #111; letter-spacing: -0.5px; margin-bottom: 6px; line-height: 1.3; }
+    .rec-sub   { font-size: 15px; color: #888; margin-bottom: 20px; letter-spacing: -0.25px; }
+    .loc-cards { display: flex; flex-direction: column; gap: 12px; }
+
+    .loc-card {
+      border: 1.5px solid #e2e2e2; border-radius: 14px;
+      padding: 16px 18px;
+      display: flex; align-items: center; gap: 14px;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .loc-card.selected { background: #2d354c; border-color: #2d354c; }
+    .loc-card:active:not(.selected) { background: #f5f5f5; }
+
+    .loc-num {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: #f0f0f0; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; font-weight: 700; color: #888;
+      transition: background 0.2s, color 0.2s;
+    }
+    .loc-card.selected .loc-num { background: rgba(255,255,255,0.16); color: white; }
+    .loc-info { flex: 1; }
+    .loc-name { font-size: 17px; font-weight: 700; color: #111; letter-spacing: -0.32px; margin-bottom: 3px; transition: color 0.2s; }
+    .loc-card.selected .loc-name { color: white; }
+    .loc-dist { font-size: 14px; color: #999; letter-spacing: -0.2px; transition: color 0.2s; }
+    .loc-card.selected .loc-dist { color: rgba(255,255,255,0.62); }
+
+    /* FAB 마이크 */
+    .fab-mic {
+      position: absolute; bottom: 28px; right: 24px;
+      width: 56px; height: 56px; border-radius: 50%;
+      background: #ebebeb; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.14);
+      transition: background 0.2s, box-shadow 0.2s;
+      z-index: 5;
+    }
+    .fab-mic.active {
+      background: #fdeb06;
+      box-shadow: 0 0 0 6px rgba(253,235,6,0.28), 0 4px 14px rgba(200,180,0,0.35);
+      animation: fabPulse 1.2s ease-in-out infinite;
+    }
+    @keyframes fabPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+
+    /* 토스트 */
+    .voice-toast {
+      position: absolute; bottom: 96px; left: 50%; transform: translateX(-50%);
+      background: rgba(30,30,30,0.82); color: white;
+      font-size: 14px; font-weight: 500; letter-spacing: -0.2px;
+      padding: 8px 18px; border-radius: 20px; white-space: nowrap;
+      opacity: 0; transition: opacity 0.2s; z-index: 6; pointer-events: none;
+    }
+    .voice-toast.show { opacity: 1; }
+
+    /* 도착지 세션 전환 카운트다운 오버레이 */
+    .arrive-countdown {
+      position: absolute; inset: 0; z-index: 30;
+      background: rgba(255,255,255,0.92);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 16px;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .arrive-countdown.show { opacity: 1; pointer-events: auto; }
+    .arrive-countdown-icon { font-size: 48px; }
+    .arrive-countdown-text {
+      font-size: 20px; font-weight: 700; color: #111;
+      text-align: center; letter-spacing: -0.4px; line-height: 1.5;
+    }
+    .arrive-countdown-sub { font-size: 15px; color: #888; letter-spacing: -0.25px; }
+
+    /* ── 키보드 입력 페이지 */
+    .bar-input {
+      position: absolute;
+      left: 32px; top: 50%; transform: translateY(-50%);
+      width: calc(100% - 70px);
+      border: none; background: transparent;
+      font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
+      font-size: 15px; color: #111; letter-spacing: -0.2px;
+      outline: none;
+    }
+    .bar-input::placeholder { color: #aaa; }
+    .kb-confirm-btn {
+      position: absolute; left: 25px; bottom: 40px; width: 352px; height: 52px;
+      background: #2d354c; color: #fff; border: none; border-radius: 26px;
+      font-family: inherit; font-size: 16px; font-weight: 700;
+      letter-spacing: -0.3px; cursor: pointer;
+    }
+    .kb-confirm-btn:disabled { background: #c8c8c8; cursor: default; }
+  </style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- ════════════════════════════════════════
+       PAGE 1 · main page
+  ════════════════════════════════════════ -->
+  <div id="page-main" class="page active">
+    <button class="back-btn" aria-label="뒤로">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 19l-7-7 7-7"/></svg>
+    </button>
+    <div class="search-bar" style="top:112px; cursor:pointer;" id="main-search-bar">
+      <div class="dot dot-gray"></div>
+      <span class="bar-text placeholder" id="main-search-text">출발지 검색</span>
+      <button class="mic-sm" id="main-speak-btn" aria-label="출발지 음성 입력">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="8" y="2" width="8" height="12" rx="4" fill="#fdeb06"/><path d="M5 10a7 7 0 0 0 14 0" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/><line x1="12" y1="17" x2="12" y2="21" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/><line x1="9" y1="21" x2="15" y2="21" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="search-bar" style="top:169px; cursor:pointer;" id="main-arrive-bar">
+      <div class="dot dot-red"></div>
+      <span class="bar-text placeholder">도착지 검색</span>
+      <button class="mic-sm" id="main-arrive-speak-btn" aria-label="도착지 음성 입력">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="8" y="2" width="8" height="12" rx="4" fill="#fdeb06"/><path d="M5 10a7 7 0 0 0 14 0" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/><line x1="12" y1="17" x2="12" y2="21" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/><line x1="9" y1="21" x2="15" y2="21" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="divider"></div>
+    <span class="label-recent">최근 내역</span><span class="label-edit">편집</span>
+    <div class="history-item" style="top:311.21px;"><span class="hi-name">성신여자대학교 성미료</span><span class="hi-addr">서울 성북구 보문로30사실 41-39</span><div class="hi-badge">도착</div></div>
+    <div class="history-item" style="top:396.07px;"><span class="hi-name">성신여자대학교 미디어정보관</span><span class="hi-addr">서울 성북구 보문로30사실 41-39</span><div class="hi-badge">도착</div></div>
+    <div class="history-item" style="top:480.94px;"><span class="hi-name">메가MGC커피 서현웰빙점</span><span class="hi-addr">서울 성북구 보문로30사실 41-39</span><div class="hi-badge">도착</div></div>
+    <div class="history-item" style="top:565.8px;"><span class="hi-name">현대백화점 판교점</span><span class="hi-addr">서울 성북구 보문로30사실 41-39</span><div class="hi-badge">도착</div></div>
+    <div class="history-item" style="top:650.66px;"><span class="hi-name">중앙에너비스 에너비스 (ENERVIS)</span><span class="hi-addr">서울 성북구 보문로30사실 41-39</span><div class="hi-badge">도착</div></div>
+    <div class="history-item" style="top:735.53px;"><span class="hi-name">성신여자대학교 돈암수정캠퍼스</span><span class="hi-addr">서울 성북구 보문로30사실 41-39</span><div class="hi-badge">도착</div></div>
+    <div class="history-item" style="top:823px;"><span class="hi-name">성신여자대학교 돈암수정캠퍼스</span><span class="hi-addr">서울 성북구 보문로30사실 41-39</span><div class="hi-badge">도착</div></div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       PAGE 1b · keyboard input (search_start)
+  ════════════════════════════════════════ -->
+  <div id="page-keyboard" class="page">
+    <button class="back-btn" id="kb-back-btn" aria-label="뒤로">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 19l-7-7 7-7"/></svg>
+    </button>
+    <div class="search-bar" style="top:112px;">
+      <div class="dot dot-gray"></div>
+      <input type="text" id="kb-input" class="bar-input" placeholder="출발지 검색" autocomplete="off" enterkeyhint="done">
+      <button class="mic-sm" id="kb-mic-btn" aria-label="음성 입력">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="8" y="2" width="8" height="12" rx="4" fill="#fdeb06"/><path d="M5 10a7 7 0 0 0 14 0" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/><line x1="12" y1="17" x2="12" y2="21" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/><line x1="9" y1="21" x2="15" y2="21" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="search-bar" style="top:169px;">
+      <div class="dot dot-red"></div>
+      <span class="bar-text placeholder">도착지 검색</span>
+    </div>
+    <div class="divider"></div>
+    <span class="label-recent">최근 내역</span><span class="label-edit">편집</span>
+    <div class="history-item" style="top:311.21px;"><span class="hi-name">성신여자대학교 성미료</span><span class="hi-addr">서울 성북구 보문로30사실 41-39</span><div class="hi-badge">도착</div></div>
+    <div class="history-item" style="top:396.07px;"><span class="hi-name">성신여자대학교 미디어정보관</span><span class="hi-addr">서울 성북구 보문로30사실 41-39</span><div class="hi-badge">도착</div></div>
+    <div class="history-item" style="top:480.94px;"><span class="hi-name">메가MGC커피 서현웰빙점</span><span class="hi-addr">서울 성북구 보문로30사실 41-39</span><div class="hi-badge">도착</div></div>
+    <div class="history-item" style="top:565.8px;"><span class="hi-name">현대백화점 판교점</span><span class="hi-addr">서울 성북구 보문로30사실 41-39</span><div class="hi-badge">도착</div></div>
+    <button class="kb-confirm-btn" id="kb-confirm-btn" disabled>확인</button>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       PAGE 1c · keyboard input (search_arrive)
+  ════════════════════════════════════════ -->
+  <div id="page-keyboard-arrive" class="page">
+    <button class="back-btn" id="kb-arrive-back-btn" aria-label="뒤로">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 19l-7-7 7-7"/></svg>
+    </button>
+    <div class="search-bar" style="top:112px;">
+      <div class="dot dot-gray"></div>
+      <span class="bar-text placeholder" id="kb-arrive-start-text">출발지 검색</span>
+    </div>
+    <div class="search-bar" style="top:169px;">
+      <div class="dot dot-red"></div>
+      <input type="text" id="kb-arrive-input" class="bar-input" placeholder="도착지 검색" autocomplete="off" enterkeyhint="done">
+      <button class="mic-sm" id="kb-arrive-mic-btn" aria-label="음성 입력">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="8" y="2" width="8" height="12" rx="4" fill="#fdeb06"/><path d="M5 10a7 7 0 0 0 14 0" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/><line x1="12" y1="17" x2="12" y2="21" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/><line x1="9" y1="21" x2="15" y2="21" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="divider"></div>
+    <span class="label-recent">최근 내역</span><span class="label-edit">편집</span>
+    <div class="history-item" style="top:311.21px;"><span class="hi-name">성신여자대학교 성미료</span><span class="hi-addr">서울 성북구 보문로30사실 41-39</span><div class="hi-badge">도착</div></div>
+    <div class="history-item" style="top:396.07px;"><span class="hi-name">성신여자대학교 미디어정보관</span><span class="hi-addr">서울 성북구 보문로30사실 41-39</span><div class="hi-badge">도착</div></div>
+    <div class="history-item" style="top:480.94px;"><span class="hi-name">메가MGC커피 서현웰빙점</span><span class="hi-addr">서울 성북구 보문로30사실 41-39</span><div class="hi-badge">도착</div></div>
+    <div class="history-item" style="top:565.8px;"><span class="hi-name">현대백화점 판교점</span><span class="hi-addr">서울 성북구 보문로30사실 41-39</span><div class="hi-badge">도착</div></div>
+    <button class="kb-confirm-btn" id="kb-arrive-confirm-btn" disabled>확인</button>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       PAGE 2 · listening (출발지 / 도착지 공용)
+  ════════════════════════════════════════ -->
+  <div id="page-listening" class="page">
+    <button class="back-btn" style="opacity:0.5; pointer-events:none;" aria-hidden="true">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 19l-7-7 7-7"/></svg>
+    </button>
+    <div class="search-bar" style="top:112px;">
+      <div class="dot dot-gray"></div>
+      <span class="bar-text placeholder" id="listen-bg-start">출발지 검색</span>
+    </div>
+    <div class="search-bar" style="top:169px;">
+      <div class="dot dot-red"></div>
+      <span class="bar-text placeholder" id="listen-bg-arrive">도착지 검색</span>
+    </div>
+    <div class="divider"></div>
+    <span class="label-recent">최근 내역</span><span class="label-edit">편집</span>
+    <div class="history-item" style="top:311.21px;"><span class="hi-name">성신여자대학교 성미료</span><span class="hi-addr">서울 성북구 보문로30사실 41-39</span><div class="hi-badge">도착</div></div>
+    <div class="history-item" style="top:396.07px;"><span class="hi-name">성신여자대학교 미디어정보관</span><span class="hi-addr">서울 성북구 보문로30사실 41-39</span><div class="hi-badge">도착</div></div>
+    <div class="history-item" style="top:480.94px;"><span class="hi-name">메가MGC커피 서현웰빙점</span><span class="hi-addr">서울 성북구 보문로30사실 41-39</span><div class="hi-badge">도착</div></div>
+    <div class="history-item" style="top:565.8px;"><span class="hi-name">현대백화점 판교점</span><span class="hi-addr">서울 성북구 보문로30사실 41-39</span><div class="hi-badge">도착</div></div>
+
+    <div class="dim-overlay" id="dim-overlay"></div>
+
+    <div class="voice-modal">
+      <p class="modal-guide" id="modal-guide">출발지를 말해보세요</p>
+      <p class="modal-result" id="speakresult">...</p>
+      <div class="modal-mic-area">
+        <div class="mic-big-wrap">
+          <div class="pulse-ring r1" id="pr1"></div>
+          <div class="pulse-ring r2" id="pr2"></div>
+          <div class="pulse-ring r3" id="pr3"></div>
+          <button class="mic-circle" id="mic-circle" aria-label="마이크">
+            <svg id="mic-off-icon" width="72" height="72" viewBox="0 0 72 72" fill="none">
+              <circle cx="36" cy="36" r="36" fill="#c8c8c8"/>
+              <rect x="26" y="14" width="20" height="30" rx="10" fill="#888"/>
+              <path d="M17 34a19 19 0 0 0 38 0" stroke="#888" stroke-width="3.5" stroke-linecap="round"/>
+              <line x1="36" y1="53" x2="36" y2="60" stroke="#888" stroke-width="3.5" stroke-linecap="round"/>
+              <line x1="27" y1="60" x2="45" y2="60" stroke="#888" stroke-width="3.5" stroke-linecap="round"/>
+            </svg>
+            <svg id="mic-on-icon" width="72" height="72" viewBox="0 0 72 72" fill="none" style="display:none; position:absolute;">
+              <circle cx="36" cy="36" r="36" fill="#2d354c"/>
+              <rect x="26" y="14" width="20" height="30" rx="10" fill="#fdeb06"/>
+              <path d="M17 34a19 19 0 0 0 38 0" stroke="#fdeb06" stroke-width="3.5" stroke-linecap="round"/>
+              <line x1="36" y1="53" x2="36" y2="60" stroke="#fdeb06" stroke-width="3.5" stroke-linecap="round"/>
+              <line x1="27" y1="60" x2="45" y2="60" stroke="#fdeb06" stroke-width="3.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="modal-btns hidden" id="modal-btns">
+        <button class="btn-respeak" id="btn-respeak">다시 말하기</button>
+        <button class="btn-select"  id="btn-select" disabled>확정하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       PAGE 3 · results
+  ════════════════════════════════════════ -->
+  <div id="page-results" class="page">
+    <button class="back-btn" id="results-back" aria-label="뒤로">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 19l-7-7 7-7"/></svg>
+    </button>
+    <div class="search-bar" style="top:112px;">
+      <div class="dot dot-gray"></div>
+      <span class="bar-text" id="result-start-text">출발지 검색</span>
+      <button class="mic-sm" style="pointer-events:none;" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="8" y="2" width="8" height="12" rx="4" fill="#fdeb06"/><path d="M5 10a7 7 0 0 0 14 0" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/><line x1="12" y1="17" x2="12" y2="21" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/><line x1="9" y1="21" x2="15" y2="21" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="search-bar" style="top:169px;">
+      <div class="dot dot-red"></div>
+      <span class="bar-text" id="result-arrive-text">도착지 검색</span>
+      <button class="mic-sm" style="pointer-events:none;" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="8" y="2" width="8" height="12" rx="4" fill="#fdeb06"/><path d="M5 10a7 7 0 0 0 14 0" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/><line x1="12" y1="17" x2="12" y2="21" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/><line x1="9" y1="21" x2="15" y2="21" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="divider"></div>
+    <span class="label-recent">최근 내역</span><span class="label-edit">편집</span>
+    <div class="history-item" style="top:311.21px;"><span class="hi-name">성신여자대학교 성미료</span><span class="hi-addr">서울 성북구 보문로30사실 41-39</span><div class="hi-badge">도착</div></div>
+    <div class="history-item" style="top:396.07px;"><span class="hi-name">성신여자대학교 미디어정보관</span><span class="hi-addr">서울 성북구 보문로30사실 41-39</span><div class="hi-badge">도착</div></div>
+    <div class="history-item" style="top:480.94px;"><span class="hi-name">메가MGC커피 서현웰빙점</span><span class="hi-addr">서울 성북구 보문로30사실 41-39</span><div class="hi-badge">도착</div></div>
+    <div class="history-item" style="top:565.8px;"><span class="hi-name">현대백화점 판교점</span><span class="hi-addr">서울 성북구 보문로30사실 41-39</span><div class="hi-badge">도착</div></div>
+    <div class="history-item" style="top:650.66px;"><span class="hi-name">중앙에너비스 에너비스 (ENERVIS)</span><span class="hi-addr">서울 성북구 보문로30사실 41-39</span><div class="hi-badge">도착</div></div>
+    <div class="history-item" style="top:735.53px;"><span class="hi-name">성신여자대학교 돈암수정캠퍼스</span><span class="hi-addr">서울 성북구 보문로30사실 41-39</span><div class="hi-badge">도착</div></div>
+    <div class="history-item" style="top:823px;"><span class="hi-name">성신여자대학교 돈암수정캠퍼스</span><span class="hi-addr">서울 성북구 보문로30사실 41-39</span><div class="hi-badge">도착</div></div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       PAGE 4 · recommend_start
+  ════════════════════════════════════════ -->
+  <div id="page-recommend-start" class="page">
+    <button class="back-btn" id="rec-start-back" aria-label="뒤로">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 19l-7-7 7-7"/></svg>
+    </button>
+    <div class="search-bar" style="top:112px;">
+      <div class="dot dot-gray"></div>
+      <span class="bar-text filled" id="rec-start-text"></span>
+      <button class="mic-sm" style="pointer-events:none;" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="8" y="2" width="8" height="12" rx="4" fill="#fdeb06"/><path d="M5 10a7 7 0 0 0 14 0" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/><line x1="12" y1="17" x2="12" y2="21" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/><line x1="9" y1="21" x2="15" y2="21" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="search-bar" style="top:169px;">
+      <div class="dot dot-red"></div>
+      <span class="bar-text placeholder">도착지 검색</span>
+      <button class="mic-sm" style="pointer-events:none;" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="8" y="2" width="8" height="12" rx="4" fill="#fdeb06"/><path d="M5 10a7 7 0 0 0 14 0" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/><line x1="12" y1="17" x2="12" y2="21" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/><line x1="9" y1="21" x2="15" y2="21" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="rec-section">
+      <p class="rec-title">어디서 탈까요?</p>
+      <p class="rec-sub">정차 가능한 승차 위치 3곳을 찾아봤어요</p>
+      <div class="loc-cards" id="start-loc-cards"></div>
+    </div>
+    <button class="fab-mic" id="fab-start" aria-label="음성으로 위치 선택">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="8" y="2" width="8" height="12" rx="4" fill="#2d354c"/><path d="M5 10a7 7 0 0 0 14 0" stroke="#2d354c" stroke-width="2.2" stroke-linecap="round"/><line x1="12" y1="17" x2="12" y2="21" stroke="#2d354c" stroke-width="2.2" stroke-linecap="round"/><line x1="9" y1="21" x2="15" y2="21" stroke="#2d354c" stroke-width="2.2" stroke-linecap="round"/></svg>
+    </button>
+    <div class="voice-toast" id="start-toast">1번, 2번, 3번 중 말해보세요</div>
+    <div class="arrive-countdown" id="arrive-countdown">
+      <div class="arrive-countdown-icon">📍</div>
+      <div class="arrive-countdown-text">출발지가 확정됐어요!<br>이번엔 도착지를 말해볼게요</div>
+      <div class="arrive-countdown-sub">잠시 후 도착지 입력이 시작됩니다</div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       PAGE 5 · recommend_arrived
+  ════════════════════════════════════════ -->
+  <div id="page-recommend-arrive" class="page">
+    <button class="back-btn" id="rec-arrive-back" aria-label="뒤로">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 19l-7-7 7-7"/></svg>
+    </button>
+    <div class="search-bar" style="top:112px;">
+      <div class="dot dot-gray"></div>
+      <span class="bar-text filled" id="rec-arrive-start-text"></span>
+      <button class="mic-sm" style="pointer-events:none;" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="8" y="2" width="8" height="12" rx="4" fill="#fdeb06"/><path d="M5 10a7 7 0 0 0 14 0" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/><line x1="12" y1="17" x2="12" y2="21" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/><line x1="9" y1="21" x2="15" y2="21" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="search-bar" style="top:169px;">
+      <div class="dot dot-red"></div>
+      <span class="bar-text filled" id="rec-arrive-arrive-text"></span>
+      <button class="mic-sm" style="pointer-events:none;" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="8" y="2" width="8" height="12" rx="4" fill="#fdeb06"/><path d="M5 10a7 7 0 0 0 14 0" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/><line x1="12" y1="17" x2="12" y2="21" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/><line x1="9" y1="21" x2="15" y2="21" stroke="#fdeb06" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="rec-section">
+      <p class="rec-title">어디서 내릴까요?</p>
+      <p class="rec-sub">차량이 정차 가능한 하차 위치 3곳을 찾아봤어요</p>
+      <div class="loc-cards" id="arrive-loc-cards"></div>
+    </div>
+    <button class="fab-mic" id="fab-arrive" aria-label="음성으로 하차 위치 선택">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="8" y="2" width="8" height="12" rx="4" fill="#2d354c"/><path d="M5 10a7 7 0 0 0 14 0" stroke="#2d354c" stroke-width="2.2" stroke-linecap="round"/><line x1="12" y1="17" x2="12" y2="21" stroke="#2d354c" stroke-width="2.2" stroke-linecap="round"/><line x1="9" y1="21" x2="15" y2="21" stroke="#2d354c" stroke-width="2.2" stroke-linecap="round"/></svg>
+    </button>
+    <div class="voice-toast" id="arrive-toast">1번, 2번, 3번 중 말해보세요</div>
+  </div>
+
+</div><!-- /phone -->
+
+<script>
+'use strict';
+
+// ── 페이지 전환 ──────────────────────────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ── DOM refs ─────────────────────────────────────────────────────────
+const $guide         = document.getElementById('modal-guide');
+const $result        = document.getElementById('speakresult');
+const $micCircle     = document.getElementById('mic-circle');
+const $micOffIcon    = document.getElementById('mic-off-icon');
+const $micOnIcon     = document.getElementById('mic-on-icon');
+const $pulseRings    = ['pr1','pr2','pr3'].map(id => document.getElementById(id));
+const $modalBtns     = document.getElementById('modal-btns');
+const $btnRespeak    = document.getElementById('btn-respeak');
+const $btnSelect     = document.getElementById('btn-select');
+const $listenBgStart = document.getElementById('listen-bg-start');
+const $listenBgArrive= document.getElementById('listen-bg-arrive');
+
+const $resultStart  = document.getElementById('result-start-text');
+const $resultArrive = document.getElementById('result-arrive-text');
+
+const $recStartText   = document.getElementById('rec-start-text');
+const $startLocCards  = document.getElementById('start-loc-cards');
+const $fabStart       = document.getElementById('fab-start');
+const $startToast     = document.getElementById('start-toast');
+const $arriveCountdown= document.getElementById('arrive-countdown');
+
+const $recArriveStart = document.getElementById('rec-arrive-start-text');
+const $recArriveArrive= document.getElementById('rec-arrive-arrive-text');
+const $arriveLocCards = document.getElementById('arrive-loc-cards');
+const $fabArrive      = document.getElementById('fab-arrive');
+const $arriveToast    = document.getElementById('arrive-toast');
+
+// ── 상태 ─────────────────────────────────────────────────────────────
+let mode             = 'departure';
+let directArrival    = false;
+let sttRec           = null;
+let selectRec        = null;
+let finalText        = '';
+let confirmedHoCall  = '';
+let startSelectedIdx = -1;
+let arriveSelectedIdx= -1;
+
+// ── 위치 데이터 ──────────────────────────────────────────────────────
+const START_LOCATIONS = [
+  { name: '성신여자대학교 정문',       dist: 100, walk: 1 },
+  { name: '돈암사거리(스타벅스 라인)', dist: 150, walk: 2 },
+  { name: '성신여자대학교 성미료',     dist: 200, walk: 3 },
+];
+
+let ARRIVE_LOCATIONS = [];
+
+function buildArriveLocations(destText) {
+  const short = destText.length > 8 ? destText.slice(0, 8) : destText;
+  return [
+    { name: short + ' 정문 앞',        dist: 50,  walk: 1 },
+    { name: short + ' 인근 버스정류장', dist: 90,  walk: 1 },
+    { name: short + ' 후문',           dist: 130, walk: 2 },
+  ];
+}
+
+// ── TTS ─────────────────────────────────────────────────────────────
+function speak(text, onEnd) {
+  if (!window.speechSynthesis) { if (onEnd) onEnd(); return; }
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang  = 'ko-KR';
+  utter.rate  = 0.92;
+  utter.pitch = 1.05;
+  if (onEnd) utter.onend = () => setTimeout(onEnd, 120);
+  window.speechSynthesis.speak(utter);
+}
+
+// ── 효과음 ───────────────────────────────────────────────────────────
+function playBeep(freqs = [[660,0,0.14],[880,0.13,0.36]]) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    freqs.forEach(([freq, t0, t1]) => {
+      const osc = ctx.createOscillator(), g = ctx.createGain();
+      osc.connect(g); g.connect(ctx.destination);
+      osc.type = 'sine'; osc.frequency.value = freq;
+      g.gain.setValueAtTime(0, ctx.currentTime + t0);
+      g.gain.linearRampToValueAtTime(0.18, ctx.currentTime + t0 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t1);
+      osc.start(ctx.currentTime + t0);
+      osc.stop(ctx.currentTime + t1);
+    });
+  } catch (_) {}
+}
+
+// ── listening UI ─────────────────────────────────────────────────────
+function setListeningOn(on) {
+  $micCircle.classList.toggle('is-on', on);
+  $micOffIcon.style.display = on ? 'none' : '';
+  $micOnIcon.style.display  = on ? ''     : 'none';
+  $pulseRings.forEach(r => {
+    r.style.animationPlayState = on ? 'running' : 'paused';
+    if (!on) r.style.opacity = '0';
+  });
+  $guide.classList.toggle('is-on', on);
+  if (on) $modalBtns.classList.add('hidden');
+}
+
+// ── STT ──────────────────────────────────────────────────────────────
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+function startSTT() {
+  finalText = '';
+  $result.textContent = '...';
+  $btnSelect.disabled = true;
+  $modalBtns.classList.add('hidden');
+  setListeningOn(true);
+
+  if (!SR) { simulateSTT(); return; }
+
+  if (sttRec) { try { sttRec.abort(); } catch (_) {} }
+  sttRec = new SR();
+  sttRec.lang = 'ko-KR';
+  sttRec.interimResults = true;
+  sttRec.continuous = false;
+  sttRec.maxAlternatives = 1;
+
+  sttRec.onresult = e => {
+    let interim = '', final = '';
+    for (let i = 0; i < e.results.length; i++)
+      e.results[i].isFinal ? (final += e.results[i][0].transcript) : (interim += e.results[i][0].transcript);
+    $result.textContent = final || interim || '...';
+    if (final) finalText = final.trim();
+  };
+
+  sttRec.onend = () => {
+    setListeningOn(false);
+    $result.textContent = finalText || '...';
+    $btnSelect.disabled = !finalText;
+    $modalBtns.classList.remove('hidden');
+  };
+
+  sttRec.onerror = e => {
+    setListeningOn(false);
+    $modalBtns.classList.remove('hidden');
+    const msgs = { 'not-allowed': '마이크 권한을 허용해주세요', 'no-speech': '음성이 감지되지 않았습니다' };
+    $result.textContent = msgs[e.error] || `오류: ${e.error}`;
+  };
+
+  playBeep();
+  sttRec.start();
+}
+
+function simulateSTT() {
+  const steps = mode === 'arrival'
+    ? ['한성...', '한성대학교', '한성대학교 정문']
+    : ['성신...', '성신여자대학교', '성신여자대학교 정문'];
+  let i = 0;
+  const iv = setInterval(() => {
+    if (i < steps.length) { $result.textContent = steps[i++]; }
+    else {
+      clearInterval(iv);
+      finalText = steps[steps.length - 1];
+      setListeningOn(false);
+      $result.textContent = finalText;
+      $btnSelect.disabled = false;
+      $modalBtns.classList.remove('hidden');
+    }
+  }, 700);
+}
+
+function stopAllSTT() {
+  if (sttRec)    { try { sttRec.abort();    } catch (_) {} sttRec    = null; }
+  if (selectRec) { try { selectRec.abort(); } catch (_) {} selectRec = null; }
+}
+
+// ── 출발 위치 카드 ───────────────────────────────────────────────────
+function renderStartCards(selIdx) {
+  $startLocCards.innerHTML = '';
+  START_LOCATIONS.forEach((loc, i) => {
+    const card = document.createElement('div');
+    card.className = 'loc-card' + (i === selIdx ? ' selected' : '');
+    card.innerHTML = `<div class="loc-num">${i+1}</div><div class="loc-info"><div class="loc-name">${loc.name}</div><div class="loc-dist">${loc.dist}m · 도보 ${loc.walk}분</div></div>`;
+    card.addEventListener('click', () => selectStartLocation(i));
+    $startLocCards.appendChild(card);
+  });
+}
+
+function selectStartLocation(idx) {
+  startSelectedIdx = idx;
+  renderStartCards(idx);
+  const loc = START_LOCATIONS[idx];
+  $recStartText.textContent = loc.name;
+  confirmedHoCall = loc.name;
+
+  const $mainSearchText = document.getElementById('main-search-text');
+  $mainSearchText.textContent = loc.name;
+  $mainSearchText.className   = 'bar-text filled';
+  setResultText($resultStart, loc.name);
+
+  speak(`${loc.name}을 출발 호출지로 선택했습니다.`);
+  setTimeout(() => showPage('page-main'), 600);
+}
+
+// ── 도착 위치 카드 ───────────────────────────────────────────────────
+function renderArriveCards(selIdx) {
+  $arriveLocCards.innerHTML = '';
+  ARRIVE_LOCATIONS.forEach((loc, i) => {
+    const card = document.createElement('div');
+    card.className = 'loc-card' + (i === selIdx ? ' selected' : '');
+    card.innerHTML = `<div class="loc-num">${i+1}</div><div class="loc-info"><div class="loc-name">${loc.name}</div><div class="loc-dist">${loc.dist}m · 도보 ${loc.walk}분</div></div>`;
+    card.addEventListener('click', () => selectArriveLocation(i));
+    $arriveLocCards.appendChild(card);
+  });
+}
+
+function selectArriveLocation(idx) {
+  arriveSelectedIdx = idx;
+  renderArriveCards(idx);
+  const loc = ARRIVE_LOCATIONS[idx];
+  $recArriveArrive.textContent = loc.name;
+  setResultText($resultArrive, loc.name);
+  speak(`${loc.name}을 도착 하차지로 선택했습니다.`);
+}
+
+// ── results 바 텍스트 헬퍼 ───────────────────────────────────────────
+function setResultText(el, text) {
+  el.textContent = text || '';
+  el.className = text ? 'bar-text filled' : 'bar-text placeholder';
+  if (!text) el.textContent = el.id === 'result-start-text' ? '출발지 검색' : '도착지 검색';
+}
+
+// ── 도착지 세션 시작 ─────────────────────────────────────────────────
+function launchArrivalListening() {
+  mode = 'arrival';
+  finalText = '';
+  $result.textContent = '...';
+  $btnSelect.disabled = true;
+  $modalBtns.classList.add('hidden');
+  setListeningOn(false);
+  $guide.textContent = '도착지를 말해보세요';
+
+  $listenBgStart.textContent = confirmedHoCall;
+  $listenBgStart.className   = 'bar-text filled';
+  $listenBgArrive.textContent = '도착지 검색';
+  $listenBgArrive.className   = 'bar-text placeholder';
+
+  showPage('page-listening');
+  speak('도착지를 말씀해보세요.', () => setTimeout(startSTT, 200));
+}
+
+// ── 음성 위치 선택 (FAB) ─────────────────────────────────────────────
+function startVoiceSelect(fab, locations, onSelect, toast) {
+  if (fab.classList.contains('active')) return;
+  fab.classList.add('active');
+  showVoiceToast(toast, '1번, 2번, 3번 중 말해보세요');
+
+  if (!SR) {
+    setTimeout(() => { fab.classList.remove('active'); hideVoiceToast(toast); onSelect(2); }, 2000);
+    return;
+  }
+
+  if (selectRec) { try { selectRec.abort(); } catch (_) {} }
+  selectRec = new SR();
+  selectRec.lang = 'ko-KR';
+  selectRec.interimResults = false;
+  selectRec.continuous = false;
+  selectRec.maxAlternatives = 5;
+
+  selectRec.onresult = e => {
+    const text = Array.from(e.results[0]).map(r => r.transcript).join(' ');
+    const idx = matchNumber(text, locations);
+    if (idx >= 0) onSelect(idx);
+  };
+  selectRec.onend  = () => { fab.classList.remove('active'); hideVoiceToast(toast); };
+  selectRec.onerror= () => { fab.classList.remove('active'); hideVoiceToast(toast); };
+
+  playBeep([[528, 0, 0.18]]);
+  selectRec.start();
+}
+
+function matchNumber(text, locations) {
+  const maps = [
+    ['1','하나','첫','일번','일 번'],
+    ['2','둘','두','이번','이 번'],
+    ['3','셋','세','삼번','삼 번'],
+  ];
+  for (let i = 0; i < maps.length; i++)
+    if (maps[i].some(w => text.includes(w))) return i;
+  for (let i = 0; i < locations.length; i++)
+    if (text.includes(locations[i].name.slice(0, 4))) return i;
+  return -1;
+}
+
+// ── 토스트 ───────────────────────────────────────────────────────────
+const toastTimers = new WeakMap();
+function showVoiceToast(el, msg) {
+  if (toastTimers.has(el)) clearTimeout(toastTimers.get(el));
+  el.textContent = msg;
+  el.classList.add('show');
+  toastTimers.set(el, setTimeout(() => hideVoiceToast(el), 4500));
+}
+function hideVoiceToast(el) { el.classList.remove('show'); }
+
+// ── 이벤트 바인딩 ────────────────────────────────────────────────────
+
+// [main] search_start 바 클릭 → 키보드 입력
+const $kbInput   = document.getElementById('kb-input');
+const $kbConfirm = document.getElementById('kb-confirm-btn');
+
+document.getElementById('main-search-bar').addEventListener('click', () => {
+  $kbInput.value = '';
+  $kbConfirm.disabled = true;
+  showPage('page-keyboard');
+  setTimeout(() => $kbInput.focus(), 80);
+});
+
+document.getElementById('main-speak-btn').addEventListener('click', e => e.stopPropagation());
+
+$kbInput.addEventListener('input', () => { $kbConfirm.disabled = $kbInput.value.trim() === ''; });
+$kbInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !$kbConfirm.disabled) confirmKeyboardInput(); });
+document.getElementById('kb-back-btn').addEventListener('click', () => showPage('page-main'));
+
+// [main] 도착지 바 클릭 → 도착지 키보드 입력
+const $kbArriveInput   = document.getElementById('kb-arrive-input');
+const $kbArriveConfirm = document.getElementById('kb-arrive-confirm-btn');
+const $kbArriveStart   = document.getElementById('kb-arrive-start-text');
+
+document.getElementById('main-arrive-bar').addEventListener('click', () => {
+  $kbArriveStart.textContent = confirmedHoCall || '출발지 검색';
+  $kbArriveStart.className   = confirmedHoCall ? 'bar-text filled' : 'bar-text placeholder';
+  $kbArriveInput.value = '';
+  $kbArriveConfirm.disabled = true;
+  directArrival = true;
+  showPage('page-keyboard-arrive');
+  setTimeout(() => $kbArriveInput.focus(), 80);
+});
+
+document.getElementById('main-arrive-speak-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  directArrival = true;
+  mode = 'arrival';
+  finalText = '';
+  $result.textContent = '...';
+  $btnSelect.disabled = true;
+  $modalBtns.classList.add('hidden');
+  setListeningOn(false);
+  $guide.textContent = '도착지를 말해보세요';
+  $listenBgStart.textContent = confirmedHoCall || '출발지 검색';
+  $listenBgStart.className   = confirmedHoCall ? 'bar-text filled' : 'bar-text placeholder';
+  $listenBgArrive.textContent = '도착지 검색';
+  $listenBgArrive.className   = 'bar-text placeholder';
+  showPage('page-listening');
+  speak('도착지를 말씀해보세요.', () => setTimeout(startSTT, 200));
+});
+
+document.getElementById('kb-arrive-back-btn').addEventListener('click', () => { directArrival = false; showPage('page-main'); });
+
+$kbArriveInput.addEventListener('input', () => { $kbArriveConfirm.disabled = $kbArriveInput.value.trim() === ''; });
+$kbArriveInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !$kbArriveConfirm.disabled) confirmArriveKeyboard(); });
+$kbArriveConfirm.addEventListener('click', confirmArriveKeyboard);
+
+document.getElementById('kb-arrive-mic-btn').addEventListener('click', () => {
+  directArrival = true;
+  mode = 'arrival';
+  finalText = '';
+  $result.textContent = '...';
+  $btnSelect.disabled = true;
+  $modalBtns.classList.add('hidden');
+  setListeningOn(false);
+  $guide.textContent = '도착지를 말해보세요';
+  $listenBgStart.textContent = confirmedHoCall || '출발지 검색';
+  $listenBgStart.className   = confirmedHoCall ? 'bar-text filled' : 'bar-text placeholder';
+  $listenBgArrive.textContent = '도착지 검색';
+  $listenBgArrive.className   = 'bar-text placeholder';
+  showPage('page-listening');
+  speak('도착지를 말씀해보세요.', () => setTimeout(startSTT, 200));
+});
+
+function confirmArriveKeyboard() {
+  const text = $kbArriveInput.value.trim();
+  if (!text) return;
+  ARRIVE_LOCATIONS = buildArriveLocations(text);
+  setResultText($resultArrive, text);
+  $recArriveStart.textContent  = confirmedHoCall;
+  $recArriveArrive.textContent = text;
+  arriveSelectedIdx = -1;
+  renderArriveCards(-1);
+  directArrival = false;
+  showPage('page-recommend-arrive');
+  const locs = ARRIVE_LOCATIONS.map((l, i) => `${i+1}번, ${l.name}, ${l.dist}미터`).join('. ');
+  speak(`도착지 근처 정차 가능한 위치 3곳을 찾아봤습니다. ${locs}. 음성으로 선택하시려면 마이크 버튼을 눌러주세요.`);
+}
+
+document.getElementById('kb-mic-btn').addEventListener('click', () => {
+  mode = 'departure';
+  finalText = '';
+  $result.textContent = '...';
+  $btnSelect.disabled = true;
+  $modalBtns.classList.add('hidden');
+  setListeningOn(false);
+  $guide.textContent = '출발지를 말해보세요';
+  $listenBgStart.textContent = '출발지 검색';
+  $listenBgStart.className   = 'bar-text placeholder';
+  $listenBgArrive.textContent = '도착지 검색';
+  $listenBgArrive.className   = 'bar-text placeholder';
+  showPage('page-listening');
+  speak('출발지를 말씀해보세요.', () => setTimeout(startSTT, 200));
+});
+
+$kbConfirm.addEventListener('click', confirmKeyboardInput);
+
+function confirmKeyboardInput() {
+  const text = $kbInput.value.trim();
+  if (!text) return;
+  mode = 'departure';
+  setResultText($resultStart, text);
+  setResultText($resultArrive, '');
+  $recStartText.textContent = text;
+  startSelectedIdx = -1;
+  renderStartCards(-1);
+  showPage('page-results');
+  setTimeout(() => {
+    showPage('page-recommend-start');
+    const locs = START_LOCATIONS.map((l, i) => `${i+1}번, ${l.name}, ${l.dist}미터`).join('. ');
+    speak(`정차 가능한 위치 3곳을 찾아봤습니다. ${locs}. 음성으로 선택하시려면 마이크 버튼을 눌러주세요.`);
+  }, 600);
+}
+
+// [main] 출발지 마이크 → listening
+document.getElementById('main-speak-btn').addEventListener('click', () => {
+  mode = 'departure';
+  finalText = '';
+  $result.textContent = '...';
+  $btnSelect.disabled = true;
+  $modalBtns.classList.add('hidden');
+  setListeningOn(false);
+  $guide.textContent = '출발지를 말해보세요';
+  $listenBgStart.textContent = '출발지 검색';
+  $listenBgStart.className   = 'bar-text placeholder';
+  $listenBgArrive.textContent = '도착지 검색';
+  $listenBgArrive.className   = 'bar-text placeholder';
+  showPage('page-listening');
+  speak('출발지를 말씀해보세요.', () => setTimeout(startSTT, 200));
+});
+
+// [listening] 마이크 원형 버튼
+$micCircle.addEventListener('click', () => {
+  if ($micCircle.classList.contains('is-on')) {
+    if (sttRec) { try { sttRec.stop(); } catch (_) {} }
+  } else { startSTT(); }
+});
+
+// [listening] 다시 말하기
+$btnRespeak.addEventListener('click', () => { stopAllSTT(); startSTT(); });
+
+// [listening] 확정하기
+$btnSelect.addEventListener('click', () => {
+  const text = finalText || $result.textContent;
+  if (!text || text === '...') return;
+  stopAllSTT();
+
+  if (mode === 'departure') {
+    setResultText($resultStart, text);
+    setResultText($resultArrive, '');
+    $recStartText.textContent = text;
+    startSelectedIdx = -1;
+    renderStartCards(-1);
+    showPage('page-results');
+    setTimeout(() => {
+      showPage('page-recommend-start');
+      const locs = START_LOCATIONS.map((l, i) => `${i+1}번, ${l.name}, ${l.dist}미터`).join('. ');
+      speak(`정차 가능한 위치 3곳을 찾아봤습니다. ${locs}. 음성으로 선택하시려면 마이크 버튼을 눌러주세요.`);
+    }, 600);
+  } else {
+    setResultText($resultArrive, text);
+    ARRIVE_LOCATIONS = buildArriveLocations(text);
+    $recArriveStart.textContent  = confirmedHoCall;
+    $recArriveArrive.textContent = text;
+    arriveSelectedIdx = -1;
+    renderArriveCards(-1);
+
+    const goToArrive = () => {
+      showPage('page-recommend-arrive');
+      const locs = ARRIVE_LOCATIONS.map((l, i) => `${i+1}번, ${l.name}, ${l.dist}미터`).join('. ');
+      speak(`도착지 근처 정차 가능한 위치 3곳을 찾아봤습니다. ${locs}. 음성으로 선택하시려면 마이크 버튼을 눌러주세요.`);
+    };
+
+    if (directArrival) { directArrival = false; goToArrive(); }
+    else { showPage('page-results'); setTimeout(goToArrive, 600); }
+  }
+});
+
+// [listening] 딤 클릭 → main
+document.getElementById('dim-overlay').addEventListener('click', () => {
+  stopAllSTT(); setListeningOn(false); showPage('page-main');
+});
+
+// [results] 뒤로가기
+document.getElementById('results-back').addEventListener('click', () => showPage('page-main'));
+
+// [recommend_start] 뒤로가기
+document.getElementById('rec-start-back').addEventListener('click', () => {
+  stopAllSTT(); $fabStart.classList.remove('active'); hideVoiceToast($startToast); showPage('page-results');
+});
+
+// [recommend_start] FAB
+$fabStart.addEventListener('click', () => {
+  speak('원하시는 위치의 번호를 말씀해주세요.', () =>
+    startVoiceSelect($fabStart, START_LOCATIONS, selectStartLocation, $startToast)
+  );
+});
+
+// [recommend_arrived] 뒤로가기
+document.getElementById('rec-arrive-back').addEventListener('click', () => {
+  stopAllSTT(); $fabArrive.classList.remove('active'); hideVoiceToast($arriveToast); showPage('page-recommend-start');
+});
+
+// [recommend_arrived] FAB
+$fabArrive.addEventListener('click', () => {
+  speak('원하시는 위치의 번호를 말씀해주세요.', () =>
+    startVoiceSelect($fabArrive, ARRIVE_LOCATIONS, selectArriveLocation, $arriveToast)
+  );
+});
+</script>
+</body>
+</html>

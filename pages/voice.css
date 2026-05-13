@@ -4,15 +4,22 @@
 
 /* 화면 전체 */
 .screen {
-  width: 100%;
-  max-width: 402px;
-  min-height: 100vh;
-  margin: 0 auto;
+  width: 402px;
+  height: 874px;
+  flex-shrink: 0;
   background: #fff;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
   padding-top: 52px;
+  border-radius: 40px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.35);
+}
+@media (max-width: 480px) {
+  .screen {
+    width: 100vw; height: 100vh;
+    border-radius: 0; box-shadow: none;
+  }
 }
 
 /* 검색창 영역 */

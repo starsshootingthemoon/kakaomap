@@ -1,0 +1,995 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>택시 호출 → 도착 흐름 프로토타입 v2</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=93fb3b70693c7f3aba7c97dd76479fd7&libraries=services&autoload=false"></script>
+<style>
+  :root{
+    --blue:#056aec; --blue2:#066aeb;
+    --navy:#2d354c; --red:#d12020;
+    --red-strong:#d10000; --green:#01af46;
+    --map-bg:#dce9f1;
+    --gray-text:#626770; --gray-light:#9c9fa5;
+    --line:#dbdbdb; --bg-soft:#f8f8f8;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:#0d0f12;font-family:'Pretendard',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;color:#000;overflow:hidden}
+  .device{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+  .phone{position:relative;width:402px;height:874px;background:#fff;overflow:hidden;border-radius:32px;box-shadow:0 20px 60px rgba(0,0,0,0.5)}
+  @media (max-width:480px){.phone{width:100vw;height:100vh;border-radius:0;box-shadow:none}}
+
+  .statusbar{position:absolute;top:0;left:0;right:0;height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;z-index:100;font-size:17px;font-weight:500;pointer-events:none;color:#000}
+  .statusbar .right{display:flex;gap:6px;align-items:center;font-size:13px}
+  .statusbar.dark{color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.3)}
+
+  .screen{position:absolute;inset:0;background:#fff;display:none;flex-direction:column;overflow:hidden}
+  .screen.active{display:flex}
+  .screen.fade{animation:fade .35s ease both}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+
+  /* === 1. 호출 확정 === */
+  #screen-overview{background:var(--map-bg)}
+  #map-overview{position:absolute;inset:0;background:var(--map-bg)}
+  .overview-back{position:absolute;left:26.84px;top:55.87px;width:42.74px;height:42.74px;border-radius:50%;background:#fff;z-index:8;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:300;color:#111;box-shadow:0 1px 3px rgba(0,0,0,.05);cursor:pointer}
+  .overview-reserve{position:absolute;left:25.34px;top:580px;width:103px;height:37px;border-radius:23px;background:#4f5763;color:#fff;z-index:8;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;letter-spacing:-.304px}
+  .overview-locate{position:absolute;right:26.11px;top:577.13px;width:42.74px;height:42.74px;border-radius:50%;background:#fff;z-index:8;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .overview-locate::before{content:"";width:21px;height:21px;border:2px solid #111;border-radius:50%;display:block}
+  .overview-locate::after{content:"";position:absolute;width:30px;height:2px;background:#111;box-shadow:14px 0 0 -13px transparent}
+  .overview-panel{position:absolute;left:0;right:0;bottom:0;height:239px;background:#fff;border-top-left-radius:25px;border-top-right-radius:25px;z-index:7;padding:19px 25.5px 22px;overflow:hidden}
+  .overview-route{position:relative;padding-left:31.57px}
+  .overview-route::after{content:"";position:absolute;left:5.8px;right:5px;top:39.5px;height:1px;background:#e1e1e1}
+  .overview-route .point{position:relative;height:46.34px;display:flex;align-items:flex-start;font-size:20px;line-height:1.5;letter-spacing:-.38px;white-space:nowrap}
+  .overview-route .point::before{content:"";position:absolute;left:-18.09px;top:11.84px;width:6.32px;height:6.32px;border-radius:50%;background:#111}
+  .overview-route .point.drop::before{background:#d12020}
+  .overview-chips{display:flex;gap:11px;margin:19.5px 0 13.44px 5.8px}
+  .overview-chip{height:37px;border-radius:23px;background:#f5f6f7;color:#626770;display:flex;align-items:center;justify-content:center;padding:0 18px;font-size:15px;font-weight:600;white-space:nowrap}
+  .overview-chip.active{background:#fff;border:1px solid #d9d9d9;color:#111}
+  .overview-cta{height:53px;border-radius:4px;background:#066aeb;color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;letter-spacing:-.342px;cursor:pointer}
+
+  #screen-call{background:var(--map-bg)}
+  #map-call{position:absolute;top:0;left:0;right:0;height:540px;background:var(--map-bg)}
+  .search-bar{position:absolute;top:75px;left:50%;transform:translateX(-50%);width:361px;height:46px;background:#fff;border-radius:26px;display:flex;align-items:center;padding:0 14px;gap:8px;box-shadow:0 2px 8px rgba(0,0,0,0.08);z-index:5}
+  .search-bar .x{font-size:18px;color:#666;width:18px;flex-shrink:0;text-align:center;font-weight:300;cursor:pointer}
+  .search-bar .from,.search-bar .to{font-size:16px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-0.3px}
+  .search-bar .from{flex:0 1 auto}
+  .search-bar .to{flex:1;min-width:0}
+  .search-bar .arr{color:#bbb;font-size:14px;flex-shrink:0}
+  .search-bar .voice{width:24px;height:26px;border-radius:11px;background:linear-gradient(to left,rgba(255,255,255,0.62),rgba(255,255,255,0.1));border:1px solid #eee;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px}
+  .call-back{position:absolute;left:26.84px;top:55.87px;width:42.74px;height:42.74px;border-radius:50%;background:#fff;z-index:8;display:none;align-items:center;justify-content:center;font-size:30px;font-weight:300;color:#111;box-shadow:0 1px 3px rgba(0,0,0,.08);cursor:pointer}
+  #screen-call.search-collapsed .search-bar{display:none}
+  #screen-call.search-collapsed .call-back{display:flex}
+
+  .pin{position:absolute;width:63px;height:47px;z-index:6;text-align:center}
+  .pin .label{width:63px;height:31px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:16px}
+  .pin .stem{width:1px;height:10px;background:currentColor;margin:0 auto;display:block}
+  .pin .dot{width:7px;height:7px;border-radius:50%;background:currentColor;margin:0 auto;display:block}
+  .pin.start{color:var(--navy)} .pin.start .label{background:var(--navy)}
+  .pin.end{color:var(--red)} .pin.end .label{background:var(--red)}
+  #screen-call .pin{display:none}
+
+  .map-pin-marker{width:76px;text-align:center;color:var(--pin-color,#2d354c);pointer-events:none;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.18))}
+  .map-pin-marker .mp-label{height:34px;min-width:76px;padding:0 14px;background:var(--pin-color,#2d354c);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;letter-spacing:-0.32px;white-space:nowrap;border-radius:0}
+  .map-pin-marker .mp-stem{width:2px;height:17px;background:var(--pin-color,#2d354c);margin:0 auto}
+  .map-pin-marker .mp-dot{width:6.15px;height:6.15px;border-radius:50%;background:var(--pin-color,#2d354c);margin:0 auto}
+  .map-pin-marker.figma-call-pin{position:relative;width:63px;height:46.939px;filter:none}
+  .map-pin-marker.figma-call-pin .mp-label{position:absolute;left:0;top:0;width:63px;min-width:63px;height:31px;padding:0;background:var(--pin-color,#2d354c);font-size:16px;font-weight:600;letter-spacing:-0.304px;line-height:1.5}
+  .map-pin-marker.figma-call-pin .mp-stem{position:absolute;left:31.5px;top:29.93px;width:1px;height:13.94px;margin:0;transform:translateX(-50%);background:var(--pin-color,#2d354c)}
+  .map-pin-marker.figma-call-pin .mp-dot{position:absolute;left:31.5px;top:40.79px;width:6.15px;height:6.15px;margin:0;transform:translateX(-50%);background:var(--pin-color,#2d354c)}
+
+  .recommend-pill{position:absolute;left:12px;top:490px;width:101px;height:36px;background:#fff;border-radius:24px;display:flex;align-items:center;justify-content:center;color:var(--blue);font-size:18px;font-weight:500;z-index:7;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+
+  .call-panel{position:absolute;left:0;right:0;bottom:0;height:335px;background:#fff;border-top-left-radius:25px;border-top-right-radius:25px;box-shadow:0 -4px 9px rgba(0,0,0,0.06);z-index:7}
+  .call-panel .row1{display:flex;align-items:center;padding:18px 20px 0;gap:14px;position:relative}
+  .call-panel .taxi-icon{width:56px;height:40px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .call-panel .taxi-icon img{width:100%;height:100%;object-fit:contain}
+  .call-panel .row1 .name{font-size:18px;font-weight:500;display:flex;align-items:center;gap:6px}
+  .call-panel .row1 .name .chev{font-size:12px;color:#888}
+  .call-panel .help{position:absolute;right:18px;top:14px;width:17px;height:17px;border-radius:50%;border:1px solid var(--gray-light);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--gray-light)}
+  .call-panel .types{display:flex;gap:24px;padding:14px 24px 12px;border-bottom:1px solid #eee;font-size:15px}
+  .call-panel .types .t{color:var(--gray-text)}
+  .call-panel .types .t.active{color:var(--blue);font-weight:500}
+  .call-panel .types .t.active::after{content:" ✓";font-size:13px;margin-left:2px}
+  .call-panel .pay{display:flex;align-items:center;padding:14px 24px;border-bottom:1px solid #eee;font-size:15px;gap:10px}
+  .call-panel .pay .card-icon{width:32px;height:22px;flex-shrink:0;border-radius:4px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#06b964;color:#fff;font-size:10px;font-weight:700}
+  .call-panel .pay .card-icon img{width:100%;height:100%;object-fit:cover}
+  .call-panel .pay .card-name{font-weight:400}
+  .call-panel .pay .right{margin-left:auto;color:var(--gray-text);display:flex;gap:12px;align-items:center;font-size:15px}
+  .call-panel .pay .right .sep{color:#ddd}
+  .call-panel .pay .right .arr{color:#aaa;font-weight:300}
+  .call-panel .price{display:flex;align-items:center;padding:14px 24px 0;font-size:15px;color:var(--gray-text)}
+  .call-panel .price .est{margin-left:auto;display:flex;align-items:baseline;gap:6px;color:var(--gray-text)}
+  .call-panel .price .est .info{width:11px;height:11px;border-radius:50%;border:1px solid var(--gray-light);display:inline-flex;align-items:center;justify-content:center;font-size:7px;color:var(--gray-light)}
+  .call-panel .price .est b{font-size:20px;font-weight:600;color:#000}
+  .call-panel .cta{position:absolute;left:25px;right:25px;bottom:21px;height:53px;background:var(--blue2);color:#fff;font-size:18px;font-weight:400;border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+
+  /* === 2. route page_start === */
+  #screen-route-start{background:#fff}
+  #map-route-start{position:absolute;top:0;left:0;right:0;height:471px}
+  .route-panel{position:absolute;left:0;right:0;bottom:0;height:403px;background:#fff;border-top:0.5px solid #acacac;border-top-left-radius:25px;border-top-right-radius:25px;box-shadow:0 -4px 9px rgba(0,0,0,0.06);padding:46px 24px 0;z-index:7}
+  .route-title{font-size:20px;font-weight:700;text-align:center;letter-spacing:-0.38px}
+  .route-sub{font-size:16px;color:#777;text-align:center;margin-top:10px;letter-spacing:-0.304px}
+  .route-illu{margin:40px auto 0;width:332px;height:132px;display:flex;align-items:flex-end;justify-content:center;gap:22px}
+  .route-illu .dots{order:2;width:46px;height:24px;margin-bottom:33px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+  .route-illu .dots span{width:8px;height:8px;border-radius:50%;background:var(--blue)}
+  .route-illu .walker{order:3;width:84px;height:114px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .route-illu .walker img{width:100%;height:100%;object-fit:contain}
+  .route-illu .car{order:1;width:138px;height:96px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .route-illu .car img{width:100%;height:100%;object-fit:contain}
+
+  /* route-start 전용: 업로드 시안처럼 사람 왼쪽, 점 가운데, 뒤집힌 택시 오른쪽 */
+  #screen-route-start .route-illu{margin:35px auto 0;width:279.171px;height:127px;gap:0;align-items:flex-start;justify-content:flex-start;position:relative}
+  #screen-route-start .route-illu .walker{order:1;position:absolute;left:17.17px;top:0;width:126.95px;height:127px}
+  #screen-route-start .route-illu .dots{order:2;position:absolute;left:0;top:62.93px;width:30.9px;height:5.72px;margin:0;display:block}
+  #screen-route-start .route-illu .dots span{display:none}
+  #screen-route-start .route-illu .dots:before{content:"";position:absolute;inset:0;background:url("https://www.figma.com/api/mcp/asset/a2cc9f6c-67a0-4fe6-957a-107a2cac2910") center/contain no-repeat}
+  #screen-route-start .route-illu .car{order:3;position:absolute;left:144.25px;top:24.03px;width:134.92px;height:93.9px}
+  #screen-route-start .route-illu .car img{transform:scaleX(-1);transform-origin:center center}
+  #screen-route-final .route-illu{margin:57.5px auto 0;width:303.065px;height:127px;gap:0;align-items:flex-start;justify-content:flex-start;position:relative}
+  #screen-route-final .route-illu .car{order:1;position:absolute;left:0;top:24.03px;width:134.92px;height:93.9px}
+  #screen-route-final .route-illu .dots{order:2;position:absolute;left:158.91px;top:62.93px;width:30.9px;height:5.72px;margin:0;display:block}
+  #screen-route-final .route-illu .dots span{display:none}
+  #screen-route-final .route-illu .dots:before{content:"";position:absolute;inset:0;background:url("https://www.figma.com/api/mcp/asset/b408ecd7-f8e8-4849-b259-bad107485dcc") center/contain no-repeat}
+  #screen-route-final .route-illu .walker{order:3;position:absolute;left:176.09px;top:0;width:126.98px;height:127px}
+  .route-buttons{position:absolute;left:25px;right:25px;bottom:21px;display:flex;gap:10px}
+  .btn-primary{flex:1;height:53px;background:var(--blue);color:#fff;font-weight:700;font-size:18px;border-radius:4px;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .btn-secondary{flex:1;height:53px;background:#fff;color:var(--blue);font-weight:500;font-size:18px;border:0.5px solid #534f4f;border-radius:4px;cursor:pointer}
+  .eta-pill{position:absolute;top:266px;left:23px;height:34px;display:flex;align-items:stretch;border-radius:3px;overflow:visible;box-shadow:0 1px 3px rgba(0,0,0,0.15);font-size:15px;font-weight:500;z-index:6}
+  .eta-pill::after{content:"";position:absolute;left:68px;top:28px;width:1px;height:13.94px;background:#111;border-radius:1px;z-index:-1}
+  .eta-pill::before{content:"";position:absolute;left:65.43px;top:38.79px;width:6.15px;height:6.15px;background:#111;border-radius:50%;z-index:-1}
+  .eta-pill .lbl{background:var(--blue);color:#fff;padding:5px 11px 6px;display:flex;align-items:center}
+  .eta-pill .val{background:#fff;color:#000;padding:5px 17px 6px;display:flex;align-items:center}
+  #screen-route-start > .eta-pill,#screen-route-final > .eta-pill,#screen-handoff > .eta-pill{display:none}
+  .map-eta-marker{height:34px;display:flex;align-items:stretch;border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,0.15);font-size:15px;font-weight:500;white-space:nowrap;position:relative}
+  .map-eta-marker::after{content:"";position:absolute;left:68px;top:28px;width:1px;height:13.94px;background:#111;border-radius:1px;z-index:-1}
+  .map-eta-marker::before{content:"";position:absolute;left:65.43px;top:38.79px;width:6.15px;height:6.15px;background:#111;border-radius:50%;z-index:-1}
+  .map-eta-marker .eta-lbl{background:var(--blue);color:#fff;padding:5px 11px 6px;display:flex;align-items:center}
+  .map-eta-marker .eta-val{background:#fff;color:#000;padding:5px 17px 6px;display:flex;align-items:center}
+
+  /* === 3. direction page_start === */
+  #screen-direction-start{background:#dce9f1}
+  #map-direction-start{position:absolute;top:0;left:0;right:0;bottom:0}
+  .fig-route-line{position:absolute;z-index:1;pointer-events:none}
+  .fig-current-location{position:absolute;z-index:2;pointer-events:none}
+  .nav-card{position:absolute;left:17px;right:17px;bottom:46px;height:146px;background:var(--blue);border-radius:5px;color:#fff;padding:18px 20px;display:flex;align-items:center;gap:18px;z-index:8}
+  #screen-direction-start .nav-card{padding:0;gap:0}
+  #screen-direction-start .nav-card .arrow-big{position:absolute;left:38px;top:38px;width:70px;height:70px}
+  #screen-direction-start .nav-card .arrow-big svg{width:70px;height:80px;transform:rotate(-16deg)}
+  #screen-direction-start .nav-card .text-area{position:absolute;left:121px;top:34px;width:234px}
+  #screen-direction-start .nav-card .loc{font-size:14px;font-weight:700;line-height:1.5;margin:0;letter-spacing:-0.266px}
+  #screen-direction-start .nav-card .instr{font-size:30px;font-weight:700;line-height:1.5;letter-spacing:-0.57px}
+  .nav-card .arrow-big{width:62px;height:75px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .nav-card .text-area{flex:1}
+  .nav-card .loc{font-size:14px;font-weight:700;letter-spacing:-0.266px;margin-bottom:4px}
+  .nav-card .instr{font-size:26px;font-weight:700;line-height:1.3;letter-spacing:-0.5px}
+  .walk-current-marker{position:relative;width:82px;height:82px;pointer-events:none;transform:rotate(var(--walk-rotation,0deg));transition:transform .18s linear}
+  .walk-current-marker .pulse{position:absolute;inset:0;border-radius:50%;background:rgba(255,0,0,.2);animation:walkPulse 1.65s ease-in-out infinite}
+  .walk-current-marker .blue-tail{position:absolute;left:40px;top:35px;width:41px;height:12px;background:#2f7de1;border-radius:0 6px 6px 0;transform-origin:left center;animation:tailShrink 7s linear forwards}
+  .walk-current-marker .blue-tail::after{content:"";position:absolute;right:4px;top:3px;width:0;height:0;border-top:3px solid transparent;border-bottom:3px solid transparent;border-left:5px solid rgba(255,255,255,.85)}
+  .walk-current-marker .core{position:absolute;left:22px;top:22px;width:38px;height:38px;border-radius:50%;background:#ff0b0b;border:5px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.18)}
+  .walk-heading-arrow{position:absolute;width:0;height:0;border-top:18px solid transparent;border-bottom:18px solid transparent;border-left:31px solid #ff0b0b;filter:drop-shadow(0 1px 2px rgba(0,0,0,.55));z-index:7;pointer-events:none}
+  .walk-heading-arrow::after{content:"";position:absolute;left:-32px;top:-19px;width:0;height:0;border-top:19px solid transparent;border-bottom:19px solid transparent;border-left:33px solid #111;z-index:-1}
+  #screen-direction-start .walk-heading-arrow{right:12px;top:534px;transform:rotate(-10deg)}
+  #screen-direction-final .walk-heading-arrow{right:18px;top:525px;transform:rotate(2deg)}
+  @keyframes walkPulse{0%,100%{transform:scale(.9);opacity:.78}50%{transform:scale(1.08);opacity:.46}}
+  @keyframes tailShrink{0%{transform:scaleX(1);opacity:1}82%{transform:scaleX(.18);opacity:.72}100%{transform:scaleX(0);opacity:0}}
+
+  /* === 4. nav alert === */
+  .alert-overlay-wrong{position:absolute;inset:0;background:rgba(255,1,1,0.08);z-index:50;display:none;align-items:flex-start;justify-content:center;padding-top:370px}
+  .alert-overlay-correct{position:absolute;inset:0;background:rgba(1,175,70,0.03);z-index:50;display:none;align-items:flex-start;justify-content:center;padding-top:370px}
+  .alert-overlay-wrong.show,.alert-overlay-correct.show{display:flex;animation:fade .25s ease both}
+  .alert-card{width:368px;height:132px;border-radius:25px;color:#fff;display:flex;align-items:center;justify-content:center;padding:0 24px;font-size:24px;font-weight:700;text-align:center;letter-spacing:-0.5px;line-height:1.4;gap:14px}
+  .alert-card.wrong{background:rgba(209,0,0,0.82)}
+  .alert-card.correct{background:rgba(1,175,70,0.82)}
+  .alert-card .icon{width:48px;height:48px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .alert-card .msg{flex:1}
+
+  /* === 5. taxi info === */
+  #screen-taxi-info{background:var(--map-bg)}
+  #map-taxi-info{position:absolute;top:0;left:0;right:0;height:96px;background:var(--map-bg)}
+  .taxi-info-panel{position:absolute;left:0;right:0;top:96px;bottom:0;background:#fff;border-top-left-radius:28px;border-top-right-radius:28px;padding:40px 26px 0;overflow-y:auto}
+  .taxi-info-panel .pull{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:42px;height:4px;background:#ddd;border-radius:2px}
+  .ti-h{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:600}
+  .ti-h .sub{font-size:16px;color:var(--gray-text);font-weight:500;margin-left:auto}
+  .ti-car{margin:24px auto 8px;width:100px;height:55px;display:flex;align-items:center;justify-content:center}
+  .ti-car img{width:100%;height:100%;object-fit:contain}
+  .ti-meta{display:flex;align-items:baseline;justify-content:center;gap:14px;font-size:14px}
+  .ti-meta .plate{font-size:18px;font-weight:600}
+  .ti-meta .driver{font-size:16px;color:var(--gray-text);font-weight:500}
+  .ti-meta .div{width:1px;height:20px;background:#ccc}
+  .ti-msgrow{display:flex;align-items:center;gap:10px;margin-top:18px}
+  .ti-msgrow .msg{flex:1;background:var(--bg-soft);border:1px solid var(--line);border-radius:8px;height:41px;display:flex;align-items:center;padding:0 14px;font-size:14px;color:#777;gap:8px}
+  .ti-msgrow .call-btn{width:41px;height:41px;border:1px solid var(--line);border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:18px}
+  .ti-section{margin-top:30px}
+  .ti-section h3{font-size:20px;font-weight:600;margin:0 0 14px}
+  .ti-route{display:flex;flex-direction:column;gap:10px;margin-left:8px}
+  .ti-route .stop{display:flex;align-items:center;gap:14px;font-size:16px}
+  .ti-route .dot-from{width:7px;height:7px;border-radius:50%;background:#fff;border:2px solid #777;box-sizing:content-box}
+  .ti-route .dot-to{width:11px;height:11px;border-radius:50%;background:var(--red)}
+  .ti-route .line{margin-left:6px;width:1px;height:8px;background:#bbb}
+  .ti-opt{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:16px;color:#000}
+  .ti-opt .change{margin-left:auto;border:1px solid var(--line);border-radius:8px;font-size:14px;color:#534f4f;height:29px;padding:0 12px;display:flex;align-items:center;cursor:pointer}
+  .ti-divider{height:1px;background:#eee;margin-top:18px}
+  .ti-pay{background:var(--bg-soft);border-radius:8px;padding:14px 16px;margin-top:14px;display:grid;grid-template-columns:1fr auto;gap:8px;font-size:16px}
+  .ti-pay .k{color:#777;font-weight:500}
+  .ti-pay .v{text-align:right;color:#000}
+  .ti-notice{display:flex;align-items:center;gap:10px;margin-top:18px;color:#000;font-size:15px}
+  .ti-notice .ic{width:17px;height:17px;border-radius:50%;background:transparent;border:1px solid var(--gray-light);color:var(--gray-light);font-size:11px;display:flex;align-items:center;justify-content:center}
+  .ti-notice .arr{margin-left:auto;color:var(--gray-light)}
+
+  /* === 6. arrive (Figma node 34:6) === */
+  #screen-arrive{background:#dce9f1}
+  .arrive-wrap{position:relative;width:100%;height:100%}
+  .arrive-title{position:absolute;top:198.65px;left:0;right:0;text-align:center;color:#056aec;font-size:40px;font-weight:700;letter-spacing:-0.76px;line-height:1.5;white-space:nowrap}
+  .arrive-rings{position:absolute;left:25.25px;top:198.65px;width:351.5px;height:351.5px;pointer-events:none}
+  .ring{position:absolute;border-radius:50%;border:1.25px dashed rgba(5,106,236,0.45);box-sizing:border-box}
+  .ring.r1{left:50%;top:50%;width:166.831px;height:166.831px;transform:translate(-50%,-50%);border-color:rgba(5,106,236,0.64)}
+  .ring.r2{left:50%;top:50%;width:244.89px;height:244.89px;transform:translate(-50%,-50%);border-color:rgba(5,106,236,0.43)}
+  .ring.r3{left:0;top:0;width:351.5px;height:351.5px;border-color:rgba(5,106,236,0.24)}
+  .arrive-pin{position:absolute;left:50%;top:300.33px;transform:translateX(-50%);width:117.913px;height:148.129px;overflow:hidden}
+  .arrive-pin img{position:absolute;width:348.21%;height:161.45%;left:-137.11%;top:-39.08%;max-width:none;object-fit:fill}
+  .arrive-dest{position:absolute;top:550.15px;left:0;right:0;text-align:center;color:#534f4f;font-size:24px;font-weight:700;line-height:1.5;letter-spacing:-0.456px}
+
+  /* === 7. 오른쪽 문으로 하차하세요 (direction page) === */
+  #screen-handoff{background:#fff}
+  #map-handoff{position:absolute;top:0;left:0;right:0;height:471px}
+  .fig-map-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
+  .handoff-panel{position:absolute;left:0;right:0;bottom:0;height:403px;background:#fff;border-top:0.5px solid #acacac;border-top-left-radius:25px;border-top-right-radius:25px;box-shadow:0 -4px 18.6px rgba(0,0,0,0.06);padding:46px 24px 0;z-index:7}
+  .handoff-title{font-size:20px;font-weight:700;text-align:center;letter-spacing:-0.38px}
+  .handoff-sub{font-size:16px;color:#777;text-align:center;margin-top:10px;letter-spacing:-0.304px}
+  .handoff-arrow{margin:36px auto 0;width:146px;height:120px;display:flex;align-items:center;justify-content:center}
+  .handoff-arrow svg{width:100%;height:100%}
+  .handoff-cta{position:absolute;left:25px;right:25px;bottom:21px;height:53px;background:var(--blue);color:#fff;font-size:18px;font-weight:700;border:0.5px solid #534f4f;border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+
+  /* === 8. 최종 도보 안내 제안 === */
+  #screen-route-final{background:#fff}
+  #map-route-final{position:absolute;top:0;left:0;right:0;height:471px}
+
+  /* === 9. 최종 방향 안내 === */
+  #screen-direction-final{background:#fff}
+  #map-direction-final{position:absolute;top:0;left:0;right:0;bottom:0}
+
+  /* === 11. final (피그마 그대로) === */
+  #screen-final{background:var(--map-bg)}
+  .final-title{position:absolute;top:278.27px;left:0;right:0;text-align:center;color:#056aec;font-size:36px;font-weight:700;letter-spacing:-0.684px;line-height:1.5;white-space:nowrap}
+  .final-illu{position:absolute;left:81.74px;top:370.31px;width:238.515px;height:240.054px;overflow:hidden;transform:none}
+  .final-illu img{position:absolute;width:230.01%;height:133.12%;left:-56.89%;top:-20.73%;max-width:none;object-fit:fill}
+
+  .fig-route-final-line{position:absolute;left:88.85px;top:255.5px;width:83.047px;height:475.5px;z-index:5;pointer-events:none}
+  .fig-route-final-line img{width:100%;height:100%;display:block}
+  .fig-handoff-line{position:absolute;left:88px;top:256px;width:83px;height:23.5px;z-index:5;pointer-events:none}
+  .fig-handoff-line img{width:100%;height:100%;display:block}
+  .fig-handoff-loc{position:absolute;left:69px;top:253px;width:38.052px;height:51.242px;z-index:6;pointer-events:none}
+  .fig-handoff-loc img{width:100%;height:100%;display:block}
+
+  .auto-badge{position:absolute;top:54px;right:14px;background:rgba(5,106,236,0.92);color:#fff;font-size:11px;padding:4px 10px;border-radius:11px;z-index:200;font-weight:500;display:none;align-items:center;gap:6px}
+  .auto-badge .blink{width:6px;height:6px;border-radius:50%;background:#fff;animation:blink 1s linear infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+  .calling-overlay{position:absolute;inset:0;background:rgba(255,255,255,0.95);z-index:300;display:none;align-items:center;justify-content:center;flex-direction:column;gap:18px}
+  .calling-overlay.show{display:flex;animation:fade .3s ease both}
+  .calling-overlay .spinner{width:54px;height:54px;border:4px solid #e6efff;border-top-color:var(--blue);border-radius:50%;animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .calling-overlay .txt{font-size:18px;font-weight:500;color:var(--blue)}
+
+  .dev-jump{position:fixed;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:4px;flex-wrap:wrap;justify-content:center;background:rgba(0,0,0,0.6);padding:6px;border-radius:8px;z-index:1000;max-width:96vw}
+  .dev-jump button{background:#222;color:#fff;border:1px solid #444;font-size:10px;padding:4px 6px;border-radius:4px;cursor:pointer}
+  .dev-jump.hidden{display:none}
+  .dev-toggle{position:fixed;bottom:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;border:none;font-size:11px;padding:6px 10px;border-radius:6px;z-index:1001;cursor:pointer}
+</style>
+</head>
+<body>
+
+<div class="device">
+  <div class="phone" id="phone">
+
+    <!-- 0. 경로 확인 -->
+    <div class="screen active" id="screen-overview" aria-label="경로 확인 화면">
+      <div class="statusbar" aria-hidden="true"><span>15:33</span><span class="right">●●●● ◗ ▮</span></div>
+      <div id="map-overview" aria-hidden="true"></div>
+      <div class="overview-back" aria-hidden="true">‹</div>
+      <div class="overview-reserve" aria-hidden="true">예약하기</div>
+      <div class="overview-locate" aria-hidden="true"></div>
+      <div class="overview-panel">
+        <div class="overview-route">
+          <div class="point" tabindex="-1" id="overview-heading">승차지: 성신여자대학교 성미료</div>
+          <div class="point drop">하차지: 성신여대 운정그린캠퍼스 주차장</div>
+        </div>
+        <div class="overview-chips" aria-hidden="true">
+          <div class="overview-chip">추천</div>
+          <div class="overview-chip active">일반</div>
+          <div class="overview-chip">블루파트너스</div>
+          <div class="overview-chip">벤티</div>
+        </div>
+        <div class="overview-cta" role="button" tabindex="0" onclick="go('screen-call')" onkeydown="if(event.key==='Enter'||event.key===' ')go('screen-call')">확정하기</div>
+      </div>
+    </div>
+
+    <!-- 1. 호출 확정 -->
+    <div class="screen" id="screen-call" aria-label="호출 확정 화면">
+      <div class="statusbar" aria-hidden="true"><span>15:33</span><span class="right">●●●● ◗ ▮</span></div>
+      <div id="map-call" aria-hidden="true"></div>
+      <div class="call-back" role="button" tabindex="0" aria-label="뒤로가기" onclick="go('screen-overview')" onkeydown="if(event.key==='Enter')go('screen-overview')">‹</div>
+      <div class="search-bar">
+        <span class="x" onclick="collapseCallSearch()">×</span>
+        <span class="from">성신여자대학교 성미료</span>
+        <span class="arr">›</span>
+        <span class="to">성신여대 운정그린캠퍼스 주차장</span>
+        <span class="voice">≡</span>
+      </div>
+      <div class="pin start" style="left:107px;top:352px"><div class="label">출발</div><div class="stem"></div><div class="dot"></div></div>
+      <div class="pin end" style="left:285px;top:173px"><div class="label">도착</div><div class="stem"></div><div class="dot"></div></div>
+      <div class="recommend-pill">추천경로</div>
+
+      <div class="call-panel">
+        <div class="row1">
+          <div class="taxi-icon"><img data-fig="taxi_fifth" alt="택시" /></div>
+          <div class="name">일반호출 <span class="chev">▾</span></div>
+          <div class="help">?</div>
+        </div>
+        <div class="types"><span class="t active">중형</span><span class="t">대형</span></div>
+        <div class="pay">
+          <div class="card-icon"><img data-fig="card_hana" alt="카드" /></div>
+          <div class="card-name">하나체크카드</div>
+          <div class="right"><span>쿠폰</span><span class="sep">|</span><span>포인트 0P</span><span class="arr">›</span></div>
+        </div>
+        <div class="price">
+          <span>본인탑승 ›</span>
+          <span class="est"><span class="info">i</span><span>예상</span><b>4,800원</b></span>
+        </div>
+        <div class="cta" role="button" tabindex="0" id="call-heading" onclick="confirmCall()" onkeydown="if(event.key==='Enter'||event.key===' ')confirmCall()">호출하기</div>
+      </div>
+
+      <div class="calling-overlay" id="calling-overlay" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="spinner" aria-hidden="true"></div>
+        <div class="txt">기사님을 찾고 있어요…</div>
+      </div>
+    </div>
+
+    <!-- 2. route page_start -->
+    <div class="screen" id="screen-route-start" aria-label="출발지 경로 안내 화면">
+      <div class="statusbar dark" aria-hidden="true"><span>15:33</span><span class="right">●●●● ◗ ▮</span></div>
+      <div id="map-route-start" aria-hidden="true"></div>
+      <div class="eta-pill" aria-hidden="true"><div class="lbl">도착</div><div class="val">3분 예상</div></div>
+      <div class="route-panel">
+        <div class="route-title" tabindex="-1" id="route-start-heading">출발지까지 경로를 안내할까요?</div>
+        <div class="route-sub">지정 목적지: 성신여대 정문 앞 대로변</div>
+        <div class="route-illu">
+          <div class="walker"><img data-fig="walker" alt="walker" /></div>
+          <div class="dots"><span></span><span></span><span></span></div>
+          <div class="car"><img data-fig="taxi_fifth" alt="taxi" /></div>
+        </div>
+        <div class="route-buttons">
+          <button class="btn-primary" onclick="go('screen-direction-start')">도보경로 안내 시작</button>
+          <button class="btn-secondary" onclick="skipFirstWalk()">건너뛰기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. direction page_start -->
+    <div class="screen" id="screen-direction-start" aria-label="출발지 도보 안내 화면">
+      <div class="statusbar dark" aria-hidden="true"><span>15:33</span><span class="right">●●●● ◗ ▮</span></div>
+      <div id="map-direction-start" aria-hidden="true"></div>
+      <div class="walk-heading-arrow" aria-hidden="true"></div>
+      <div class="auto-badge" aria-hidden="true"><span class="blink"></span>자동 진행</div>
+      <div class="alert-overlay-wrong" id="alert-wrong-1" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="alert-card wrong">
+          <div class="icon" aria-hidden="true"><svg width="44" height="44" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 22h20L12 2z" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><path d="M12 9v6M12 18v.5" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></div>
+          <div class="msg">길 건너편에 있어요<br/>탑승 위치 쪽으로 이동하세요</div>
+        </div>
+      </div>
+      <div class="alert-overlay-correct" id="alert-correct-1" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="alert-card correct"><div class="msg">경로에 맞게<br/>잘 가고 있습니다</div></div>
+      </div>
+      <div class="nav-card" tabindex="-1" id="direction-start-heading">
+        <div class="arrow-big" aria-hidden="true">
+          <svg viewBox="0 0 64 80" fill="none">
+            <path d="M32 8 L52 38 L42 38 L42 72 L22 72 L22 38 L12 38 Z" fill="#fff" transform="rotate(-15 32 40)"/>
+          </svg>
+        </div>
+        <div class="text-area">
+          <div class="loc">현위치: 서울 성북구 돈암동 173-3</div>
+          <div class="instr">10m 이동,<br/>왼쪽 완만한 곡선</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. taxi info -->
+    <div class="screen" id="screen-taxi-info" aria-label="택시 정보 화면">
+      <div class="statusbar" aria-hidden="true"><span>15:33</span><span class="right">●●●● ◗ ▮</span></div>
+      <div id="map-taxi-info" aria-hidden="true"></div>
+      <div class="auto-badge" aria-hidden="true"><span class="blink"></span>승차 후 자동 진행</div>
+      <div class="taxi-info-panel">
+        <div class="pull" aria-hidden="true"></div>
+        <div class="ti-h" tabindex="-1" id="taxi-info-heading">승차 위치로 오는 중 <span class="sub">··· 차량 도착까지 약 3분</span></div>
+        <div class="ti-car"><img data-fig="taxi_route" alt="택시" /></div>
+        <div class="ti-meta">
+          <span class="plate">서울 37 바 1234</span>
+          <span class="div"></span>
+          <span class="driver">김운정 기사님</span>
+        </div>
+        <div style="text-align:center;color:#534f4f;font-size:14px;margin-top:4px">쏘나타</div>
+        <div class="ti-msgrow">
+          <div class="msg">📨 열심히 달려가고 있습니다. 잠시만 기다려주세요.</div>
+          <div class="call-btn">📞</div>
+        </div>
+        <div class="ti-divider"></div>
+        <div class="ti-section">
+          <h3>운행 정보</h3>
+          <div class="ti-route">
+            <div class="stop"><span class="dot-from"></span><span>성신여자대학교 성미료</span></div>
+            <div class="line"></div>
+            <div class="stop"><span class="dot-to"></span><span>성신여자대학교 운정그린캠퍼스 주차장</span></div>
+          </div>
+          <div class="ti-opt">
+            <span style="font-size:18px">↻</span>
+            <span>추천경로 옵션으로 운행</span>
+            <span class="change">변경</span>
+          </div>
+        </div>
+        <div class="ti-section">
+          <h3>결제 정보</h3>
+          <div class="ti-pay">
+            <div class="k">결제 수단</div><div class="v">하나체크카드 1111</div>
+            <div class="k">쿠폰</div><div class="v">쿠폰 사용 안함</div>
+          </div>
+          <div class="ti-notice">
+            <span class="ic">i</span>
+            <span>탑승 유의사항 및 수수료 안내</span>
+            <span class="arr">›</span>
+          </div>
+        </div>
+        <div style="height:80px"></div>
+      </div>
+    </div>
+
+    <!-- 6. arrive -->
+    <div class="screen" id="screen-arrive" aria-label="목적지 도착 화면">
+      <div class="statusbar" aria-hidden="true"><span>15:33</span><span class="right">●●●● ◗ ▮</span></div>
+      <div class="arrive-wrap" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="arrive-title" tabindex="-1" id="arrive-heading">목적지에 도착했어요</div>
+        <div class="arrive-rings" aria-hidden="true">
+          <div class="ring r3"></div>
+          <div class="ring r2"></div>
+          <div class="ring r1"></div>
+        </div>
+        <div class="arrive-pin" aria-hidden="true"><img data-fig="pin_arrive" alt="" /></div>
+        <div class="arrive-dest">성신여자대학교 운정그린캠퍼스 주차장</div>
+      </div>
+    </div>
+
+    <!-- 7. 오른쪽 문으로 하차하세요 -->
+    <div class="screen" id="screen-handoff" aria-label="하차 안내 화면">
+      <div class="statusbar dark" aria-hidden="true"><span>15:33</span><span class="right">●●●● ◗ ▮</span></div>
+      <div id="map-handoff" aria-hidden="true"></div>
+      <div class="eta-pill" style="top:209px;left:102px" aria-hidden="true"><div class="lbl">도착</div><div class="val">3분 예상</div></div>
+      <div class="handoff-panel">
+        <div class="handoff-title" tabindex="-1" id="handoff-heading">오른쪽 문으로 하차하세요</div>
+        <div class="handoff-sub">지정 목적지: 성신여대운정캠퍼스 주차장</div>
+        <div class="handoff-arrow" aria-hidden="true">
+          <svg viewBox="0 0 146 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 50 L110 50" stroke="#056aec" stroke-width="22" stroke-linecap="square"/>
+            <path d="M90 10 L140 50 L90 90 Z" fill="#056aec"/>
+          </svg>
+        </div>
+        <div class="handoff-cta" role="button" tabindex="0" onclick="go('screen-route-final')" onkeydown="if(event.key==='Enter'||event.key===' ')go('screen-route-final')">확인</div>
+      </div>
+    </div>
+
+    <!-- 8. route page (최종 도보 제안) -->
+    <div class="screen" id="screen-route-final" aria-label="도착지 경로 안내 화면">
+      <div class="statusbar dark" aria-hidden="true"><span>15:33</span><span class="right">●●●● ◗ ▮</span></div>
+      <div id="map-route-final" aria-hidden="true"></div>
+      <div class="eta-pill" style="top:209px;left:103px" aria-hidden="true"><div class="lbl">도착</div><div class="val">11분 예상</div></div>
+      <div class="route-panel">
+        <div class="route-title" tabindex="-1" id="route-final-heading">도착지까지 경로를 안내할까요?</div>
+        <div class="route-sub">지정 목적지: 성신여대운정캠퍼스 주차장</div>
+        <div class="route-illu">
+          <div class="car"><img data-fig="taxi_fifth" alt="taxi" /></div>
+          <div class="dots"><span></span><span></span><span></span></div>
+          <div class="walker"><img data-fig="walker" alt="walker" /></div>
+        </div>
+        <div class="route-buttons">
+          <button class="btn-primary" onclick="go('screen-direction-final')">도보경로 안내 시작</button>
+          <button class="btn-secondary" onclick="skipSecondWalk()">건너뛰기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9. 최종 방향 안내 -->
+    <div class="screen" id="screen-direction-final" aria-label="도착지 도보 안내 화면">
+      <div class="statusbar dark" aria-hidden="true"><span>15:33</span><span class="right">●●●● ◗ ▮</span></div>
+      <div id="map-direction-final" aria-hidden="true"></div>
+      <div class="walk-heading-arrow" aria-hidden="true"></div>
+      <div class="auto-badge" aria-hidden="true"><span class="blink"></span>자동 진행</div>
+      <div class="alert-overlay-wrong" id="alert-wrong-2" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="alert-card wrong">
+          <div class="icon" aria-hidden="true"><svg width="44" height="44" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 22h20L12 2z" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><path d="M12 9v6M12 18v.5" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg></div>
+          <div class="msg">방향이 달라요<br/>왼쪽으로 이동하세요</div>
+        </div>
+      </div>
+      <div class="alert-overlay-correct" id="alert-correct-2" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="alert-card correct"><div class="msg">경로에 맞게<br/>잘 가고 있습니다</div></div>
+      </div>
+      <div class="nav-card" tabindex="-1" id="direction-final-heading">
+        <div class="arrow-big" aria-hidden="true">
+          <svg viewBox="0 0 64 80" fill="none">
+            <path d="M32 8 L52 38 L42 38 L42 72 L22 72 L22 38 L12 38 Z" fill="#fff"/>
+          </svg>
+        </div>
+        <div class="text-area">
+          <div class="loc">현위치: 운정그린캠퍼스 정문 앞</div>
+          <div class="instr">30m 직진,<br/>주차장 입구 도착</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 11. final -->
+    <div class="screen" id="screen-final" aria-label="이용 완료 화면">
+      <div class="statusbar" aria-hidden="true"><span>15:33</span><span class="right">●●●● ◗ ▮</span></div>
+      <div class="final-title" tabindex="-1" id="final-heading">이용해주셔서 감사합니다</div>
+      <div class="final-illu" aria-hidden="true"><img data-fig="character_final" alt="" /></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 스크린리더 전용 안내 (시각적으로 숨김) -->
+<div id="sr-announce" role="status" aria-live="polite" aria-atomic="true"
+     style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0"></div>
+
+<button class="dev-toggle" onclick="document.querySelector('.dev-jump').classList.toggle('hidden')">flow▼</button>
+<div class="dev-jump hidden">
+  <button onclick="go('screen-overview')">0.경로확인</button>
+  <button onclick="go('screen-call')">1.호출</button>
+  <button onclick="go('screen-route-start')">2.route1</button>
+  <button onclick="go('screen-direction-start')">3.dir1</button>
+  <button onclick="go('screen-taxi-info')">5.taxi</button>
+  <button onclick="go('screen-arrive')">6.arrive</button>
+  <button onclick="go('screen-handoff')">7.하차</button>
+  <button onclick="go('screen-route-final')">8.route2</button>
+  <button onclick="go('screen-direction-final')">9.dir2</button>
+  <button onclick="go('screen-final')">11.final</button>
+  <button onclick="restart()">↻</button>
+</div>
+
+<script>
+// ============================================================
+// Figma 이미지 자산 (피그마에서 노출된 URL — 시연 기간용)
+// ============================================================
+const FIG = {
+  taxi_fifth: 'https://www.figma.com/api/mcp/asset/8cc45527-df48-469e-ad49-21e154057f6a',
+  card_hana:  'https://www.figma.com/api/mcp/asset/9f0e9af9-d28d-4456-9864-2d02f98a2529',
+  walker:     'https://www.figma.com/api/mcp/asset/3ba187d1-ddcd-4d41-b585-1a1f91301438',
+  taxi_route: 'https://www.figma.com/api/mcp/asset/903e9135-424b-47f6-af83-4d6a50b18bfd',
+  pin_3d:     'https://www.figma.com/api/mcp/asset/9d27e822-a8cc-477e-96e5-75915e8e0b7e',
+  pin_arrive: 'https://www.figma.com/api/mcp/asset/72602382-78cf-4d26-b4df-3256c35d0a6b',
+  character:  'https://www.figma.com/api/mcp/asset/1819fcd7-06d1-4314-92d5-3de8f46a4e3e',
+  character_final: 'https://www.figma.com/api/mcp/asset/b8d4efbb-7f99-4403-a1b5-766c2beecdbb',
+  route_start_line: 'https://www.figma.com/api/mcp/asset/9cd9d1ef-cd88-40fa-a608-230d2e611edf',
+  current_location_start: 'https://www.figma.com/api/mcp/asset/35b73c7d-6726-4e4a-acc3-24ece9966967',
+  map_handoff: 'https://www.figma.com/api/mcp/asset/4e945f6d-4863-4088-a21f-d7f3f75662a8',
+  handoff_line: 'https://www.figma.com/api/mcp/asset/29ef2559-d42b-48ec-821a-7f1a15db5bec',
+  current_location_handoff: 'https://www.figma.com/api/mcp/asset/3ab18b7a-6a25-4d33-83fa-36da23a2d731',
+  map_route_final: 'https://www.figma.com/api/mcp/asset/03e7a7cd-86b0-4832-a148-63697ad8c92d',
+  route_final_line: 'https://www.figma.com/api/mcp/asset/b774bb6f-0c29-4ef0-aebf-90f2a2bb3f52',
+};
+document.querySelectorAll('img[data-fig]').forEach(img=>{
+  const k = img.getAttribute('data-fig');
+  if(FIG[k]) img.src = FIG[k];
+});
+
+// ============================================================
+// Kakao REST API 키
+// ============================================================
+const KAKAO_REST_API_KEY = "PUT_REST_API_KEY_HERE";
+
+// 임의 좌표
+const COORDS = {
+  origin:     {lat:37.59097, lng:127.01661, name:"성신여자대학교 성미료"},
+  pickup:     {lat:37.59185, lng:127.01632, name:"성신여대 정문 앞 대로변"},
+  dropoff:    {lat:37.59488, lng:127.02041, name:"운정그린캠퍼스 입구"},
+  destination:{lat:37.59576, lng:127.02132, name:"운정그린캠퍼스 주차장"}
+};
+
+// 화면 전환
+const SCREEN_FOCUS = {
+  'screen-overview':        'overview-heading',
+  'screen-call':            'call-heading',
+  'screen-route-start':     'route-start-heading',
+  'screen-direction-start': 'direction-start-heading',
+  'screen-taxi-info':       'taxi-info-heading',
+  'screen-arrive':          'arrive-heading',
+  'screen-handoff':         'handoff-heading',
+  'screen-route-final':     'route-final-heading',
+  'screen-direction-final': 'direction-final-heading',
+  'screen-final':           'final-heading',
+};
+
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const el = document.getElementById(id);
+  el.classList.add('active','fade');
+  setTimeout(()=>el.classList.remove('fade'), 400);
+
+  // TalkBack: 포커스를 새 화면의 첫 번째 제목으로 이동
+  const focusId = SCREEN_FOCUS[id];
+  if(focusId){
+    setTimeout(()=>{
+      const target = document.getElementById(focusId);
+      if(target) target.focus();
+    }, 150);
+  }
+
+  switch(id){
+    case 'screen-overview':       initMapOverview(); break;
+    case 'screen-call':
+      resetCallSearch();
+      initMapCall();
+      break;
+    case 'screen-route-start':    initMapRouteStart(); break;
+    case 'screen-direction-start':
+      initMapDirectionStart();
+      runFirstWalkFlow();
+      break;
+    case 'screen-taxi-info':
+      initMapTaxiInfo();
+      runTaxiToArriveFlow();
+      break;
+    case 'screen-arrive':
+      runArriveToHandoffFlow();
+      break;
+    case 'screen-handoff':        initMapHandoff(); break;
+    case 'screen-route-final':    initMapRouteFinal(); break;
+    case 'screen-direction-final':
+      initMapDirectionFinal();
+      runSecondWalkFlow();
+      break;
+  }
+}
+
+function collapseCallSearch(){
+  document.getElementById('screen-call')?.classList.add('search-collapsed');
+}
+function resetCallSearch(){
+  document.getElementById('screen-call')?.classList.remove('search-collapsed');
+}
+
+function confirmCall(){
+  const ov = document.getElementById('calling-overlay');
+  ov.classList.add('show');
+  setTimeout(()=>{ ov.classList.remove('show'); go('screen-route-start'); }, 1600);
+}
+function skipFirstWalk(){ go('screen-taxi-info'); }
+function skipSecondWalk(){ go('screen-final'); }
+
+function runFirstWalkFlow(){
+  clearAllTimers();
+  runWalkAlerts(1);
+  T.push(setTimeout(()=>go('screen-taxi-info'), 11000));
+}
+function runTaxiToArriveFlow(){
+  clearAllTimers();
+  T.push(setTimeout(()=>go('screen-arrive'), 4500));
+}
+function runArriveToHandoffFlow(){
+  clearAllTimers();
+  // TalkBack이 "목적지에 도착했어요" 읽을 시간 확보: 3초 → 7초
+  T.push(setTimeout(()=>go('screen-handoff'), 7000));
+}
+function runSecondWalkFlow(){
+  clearAllTimers();
+  runWalkAlerts(2);
+  T.push(setTimeout(()=>go('screen-final'), 11000));
+}
+
+function runWalkAlerts(stage){
+  const firstWrong = stage === 1
+    ? '길 건너편에 있어요<br/>탑승 위치 쪽으로 이동하세요'
+    : '하차 지점을 지나쳤어요<br/>목적지 쪽으로 이동하세요';
+  const secondWrong = '방향이 달라요<br/>왼쪽으로 이동하세요';
+  const correct = '경로에 맞게<br/>잘 가고 있습니다';
+  T.push(setTimeout(()=>showWalkAlert(stage, 'wrong', firstWrong), 2600));
+  T.push(setTimeout(()=>{ hideAlert(stage,'wrong'); showWalkAlert(stage, 'wrong', secondWrong); }, 4800));
+  T.push(setTimeout(()=>{ hideAlert(stage,'wrong'); showWalkAlert(stage, 'correct', correct); }, 7200));
+  T.push(setTimeout(()=>hideAlert(stage,'correct'), 9700));
+}
+
+function showAlert(stage, kind){
+  const el = document.getElementById(`alert-${kind}-${stage}`);
+  if(!el) return;
+  el.classList.add('show');
+  if(navigator.vibrate){ navigator.vibrate(kind==='wrong' ? [200,100,200,100,200] : [80]); }
+}
+function showWalkAlert(stage, kind, html){
+  const el = document.getElementById(`alert-${kind}-${stage}`);
+  const msg = el?.querySelector('.msg');
+  if(msg) msg.innerHTML = html;
+  showAlert(stage, kind);
+}
+function hideAlert(stage, kind){
+  const el = document.getElementById(`alert-${kind}-${stage}`);
+  if(el) el.classList.remove('show');
+}
+
+const T = [];
+let walkRaf = null;
+function clearAllTimers(){
+  while(T.length){ clearTimeout(T.pop()); }
+  if(walkRaf){ cancelAnimationFrame(walkRaf); walkRaf = null; }
+}
+function restart(){ clearAllTimers(); go('screen-overview'); }
+
+// Kakao Maps
+let kakaoReady = false;
+const mapInstances = {};
+function whenKakaoReady(cb){
+  if(typeof kakao === 'undefined'){
+    console.warn('[지도] Kakao SDK 미로드 — 카카오 개발자 콘솔에서 localhost 도메인을 등록해 주세요.');
+    return;
+  }
+  if(kakaoReady){ cb(); return; }
+  kakao.maps.load(()=>{ kakaoReady = true; cb(); });
+}
+function makeMap(containerId, center, level){
+  whenKakaoReady(()=>{
+    const c = document.getElementById(containerId);
+    if(!c) return;
+    if(mapInstances[containerId]){ mapInstances[containerId].relayout(); return; }
+    const map = new kakao.maps.Map(c, {
+      center: new kakao.maps.LatLng(center.lat, center.lng),
+      level: level || 3,
+      draggable: true,
+      scrollwheel: false,
+      disableDoubleClick: true
+    });
+    mapInstances[containerId] = map;
+  });
+}
+function drawPolyline(containerId, points, opts){
+  whenKakaoReady(()=>{
+    const map = mapInstances[containerId];
+    if(!map) return;
+    const path = points.map(p=>new kakao.maps.LatLng(p.lat, p.lng));
+    new kakao.maps.Polyline({
+      map, path,
+      strokeWeight: opts?.weight || 6,
+      strokeColor: opts?.color || '#066aeb',
+      strokeOpacity: opts?.opacity || 0.95,
+      strokeStyle: 'solid'
+    });
+    if(opts?.markers){
+      opts.markers.forEach(m=>{
+        const content = m.eta
+          ? `<div class="map-eta-marker"><div class="eta-lbl">${m.label||''}</div><div class="eta-val">${m.eta}</div></div>`
+          : `<div class="map-pin-marker${m.figmaPin ? ' figma-call-pin' : ''}" style="--pin-color:${m.color||'#2d354c'}"><div class="mp-label">${m.label||''}</div><div class="mp-stem"></div><div class="mp-dot"></div></div>`;
+        new kakao.maps.CustomOverlay({
+          map,
+          position: new kakao.maps.LatLng(m.lat, m.lng),
+          content,
+          yAnchor:m.eta ? 1.35 : (m.figmaPin ? 0.934 : 0.892),
+          xAnchor:m.eta ? (m.xAnchor ?? 0.5) : 0.5
+        });
+      });
+    }
+    const bounds = new kakao.maps.LatLngBounds();
+    path.forEach(p=>bounds.extend(p));
+    map.setBounds(bounds, 60, 60, 60, 60);
+    if(opts?.panBy){
+      setTimeout(()=>map.panBy(opts.panBy.x || 0, opts.panBy.y || 0), 80);
+    }
+  });
+}
+function drawMapPoints(containerId, points, opts){
+  whenKakaoReady(()=>{
+    const map = mapInstances[containerId];
+    if(!map) return;
+    const bounds = new kakao.maps.LatLngBounds();
+    points.forEach(p=>bounds.extend(new kakao.maps.LatLng(p.lat, p.lng)));
+    if(opts?.current){
+      new kakao.maps.CustomOverlay({
+        map,
+        position: new kakao.maps.LatLng(opts.current.lat, opts.current.lng),
+        content: `<img src="${FIG.current_location_start}" alt="" style="width:42.941px;height:54.759px;display:block;pointer-events:none" />`,
+        yAnchor:0.86,
+        xAnchor:0.5
+      });
+    }
+    if(opts?.markers){
+      opts.markers.forEach(m=>{
+        new kakao.maps.CustomOverlay({
+          map,
+          position: new kakao.maps.LatLng(m.lat, m.lng),
+          content: `<div class="map-pin-marker" style="--pin-color:${m.color||'#2d354c'}"><div class="mp-label">${m.label||''}</div><div class="mp-stem"></div><div class="mp-dot"></div></div>`,
+          yAnchor:0.892,
+          xAnchor:0.5
+        });
+      });
+    }
+    map.setBounds(bounds, 60, 60, 60, 60);
+  });
+}
+function drawWalkGuidance(containerId, points, opts){
+  whenKakaoReady(()=>{
+    const map = mapInstances[containerId];
+    if(!map) return;
+    const path = points.map(p=>new kakao.maps.LatLng(p.lat, p.lng));
+    new kakao.maps.Polyline({
+      map,
+      path,
+      strokeWeight: 12,
+      strokeColor: '#ffffff',
+      strokeOpacity: 0.95,
+      strokeStyle: 'solid'
+    });
+    const activeRouteLine = new kakao.maps.Polyline({
+      map,
+      path,
+      strokeWeight: 7,
+      strokeColor: '#e60000',
+      strokeOpacity: 1,
+      strokeStyle: 'solid'
+    });
+    if(opts?.markers){
+      opts.markers.forEach(m=>{
+        new kakao.maps.CustomOverlay({
+          map,
+          position: new kakao.maps.LatLng(m.lat, m.lng),
+          content: `<div class="map-pin-marker" style="--pin-color:${m.color||'#2d354c'}"><div class="mp-label">${m.label||''}</div><div class="mp-stem"></div><div class="mp-dot"></div></div>`,
+          yAnchor:0.892,
+          xAnchor:0.5
+        });
+      });
+    }
+    const bounds = new kakao.maps.LatLngBounds();
+    path.forEach(p=>bounds.extend(p));
+    map.setBounds(bounds, 70, 46, 190, 46);
+    if(opts?.current){
+      setTimeout(()=>animateWalkCurrent(map, path, opts.duration || 8800, activeRouteLine), 180);
+    }
+  });
+}
+function animateWalkCurrent(map, path, duration, activeRouteLine){
+  if(!path.length) return;
+  if(walkRaf){ cancelAnimationFrame(walkRaf); walkRaf = null; }
+  const marker = document.createElement('div');
+  marker.className = 'walk-current-marker';
+  marker.innerHTML = '<div class="pulse"></div><div class="blue-tail"></div><div class="core"></div>';
+  const overlay = new kakao.maps.CustomOverlay({
+    map,
+    position: path[0],
+    content: marker,
+    yAnchor:0.5,
+    xAnchor:0.5
+  });
+  let lastLevel = null;
+  const segments = path.length - 1;
+  const start = performance.now();
+  function step(now){
+    const t = Math.min((now - start) / duration, 1);
+    const scaled = t * segments;
+    const i = Math.min(Math.floor(scaled), segments - 1);
+    const local = scaled - i;
+    const a = path[i];
+    const b = path[i + 1];
+    const lat = a.getLat() + (b.getLat() - a.getLat()) * local;
+    const lng = a.getLng() + (b.getLng() - a.getLng()) * local;
+    const pos = new kakao.maps.LatLng(lat, lng);
+    const angle = Math.atan2(-(b.getLat() - a.getLat()), b.getLng() - a.getLng()) * 180 / Math.PI;
+    const level = t < 0.12 ? 3 : (t < 0.78 ? 2 : 1);
+    marker.style.setProperty('--walk-rotation', `${angle}deg`);
+    overlay.setPosition(pos);
+    if(activeRouteLine){
+      activeRouteLine.setPath([pos, ...path.slice(i + 1)]);
+    }
+    map.setCenter(pos);
+    if(level !== lastLevel){
+      map.setLevel(level, {animate:true});
+      lastLevel = level;
+    }
+    if(t < 1){
+      walkRaf = requestAnimationFrame(step);
+    }else{
+      if(activeRouteLine){
+        activeRouteLine.setPath([]);
+      }
+      walkRaf = null;
+    }
+  }
+  walkRaf = requestAnimationFrame(step);
+}
+function walkRoute(a, b){
+  return [a,
+    {lat:a.lat+(b.lat-a.lat)*0.4,  lng:a.lng+(b.lng-a.lng)*0.15},
+    {lat:a.lat+(b.lat-a.lat)*0.55, lng:a.lng+(b.lng-a.lng)*0.55},
+    b];
+}
+function driveRoute(a, b){
+  return [a,
+    {lat:a.lat+(b.lat-a.lat)*0.25, lng:a.lng+(b.lng-a.lng)*0.1},
+    {lat:a.lat+(b.lat-a.lat)*0.5,  lng:a.lng+(b.lng-a.lng)*0.6},
+    {lat:a.lat+(b.lat-a.lat)*0.85, lng:a.lng+(b.lng-a.lng)*0.92},
+    b];
+}
+
+function initMapCall(){
+  makeMap('map-call', {lat:(COORDS.origin.lat+COORDS.destination.lat)/2, lng:(COORDS.origin.lng+COORDS.destination.lng)/2}, 4);
+  setTimeout(()=>drawPolyline('map-call', driveRoute(COORDS.origin, COORDS.destination), {
+    color:'#066aeb', weight:7,
+    panBy:{x:0,y:-104},
+    markers:[
+      {lat:COORDS.origin.lat,lng:COORDS.origin.lng,label:'출발',color:'#2d354c',figmaPin:true},
+      {lat:COORDS.destination.lat,lng:COORDS.destination.lng,label:'도착',color:'#d12020',figmaPin:true}
+    ]
+  }), 200);
+}
+function initMapOverview(){
+  makeMap('map-overview', {lat:(COORDS.origin.lat+COORDS.destination.lat)/2, lng:(COORDS.origin.lng+COORDS.destination.lng)/2}, 4);
+  setTimeout(()=>drawPolyline('map-overview', driveRoute(COORDS.origin, COORDS.destination), {
+    color:'#066aeb', weight:7,
+    panBy:{x:0,y:155},
+    markers:[
+      {lat:COORDS.origin.lat,lng:COORDS.origin.lng,label:'출발',color:'#2d354c',figmaPin:true},
+      {lat:COORDS.destination.lat,lng:COORDS.destination.lng,label:'도착',color:'#d12020',figmaPin:true}
+    ]
+  }), 200);
+}
+function initMapRouteStart(){
+  makeMap('map-route-start', COORDS.pickup, 3);
+  setTimeout(()=>drawPolyline('map-route-start', walkRoute(COORDS.origin, COORDS.pickup), {
+    color:'#066aeb', weight:6,
+    markers:[
+      {lat:COORDS.origin.lat,lng:COORDS.origin.lng,label:'출발',color:'#2d354c'},
+      {lat:COORDS.pickup.lat,lng:COORDS.pickup.lng,label:'승차',eta:'3분 예상',xAnchor:0.535},
+    ]
+  }), 200);
+}
+function initMapDirectionStart(){
+  makeMap('map-direction-start', COORDS.pickup, 3);
+  setTimeout(()=>drawWalkGuidance('map-direction-start', walkRoute(COORDS.origin, COORDS.pickup), {
+    current: COORDS.origin,
+    markers:[{lat:COORDS.pickup.lat,lng:COORDS.pickup.lng,label:'승차 위치',color:'#066aeb'}]
+  }), 200);
+}
+function initMapTaxiInfo(){ makeMap('map-taxi-info', COORDS.pickup, 4); }
+function initMapHandoff(){
+  makeMap('map-handoff', COORDS.destination, 3);
+  setTimeout(()=>drawPolyline('map-handoff', walkRoute(COORDS.dropoff, COORDS.destination), {
+    color:'#066aeb', weight:6,
+    markers:[
+      {lat:COORDS.dropoff.lat,lng:COORDS.dropoff.lng,label:'하차',color:'#066aeb'},
+      {lat:COORDS.destination.lat,lng:COORDS.destination.lng,label:'도착',color:'#d12020'},
+    ]
+  }), 200);
+}
+function initMapRouteFinal(){
+  makeMap('map-route-final', COORDS.destination, 3);
+  setTimeout(()=>drawPolyline('map-route-final', walkRoute(COORDS.dropoff, COORDS.destination), {
+    color:'#d12020', weight:8,
+    markers:[
+      {lat:COORDS.dropoff.lat,lng:COORDS.dropoff.lng,label:'하차',color:'#066aeb'},
+      {lat:COORDS.destination.lat,lng:COORDS.destination.lng,label:'도착',eta:'11분 예상'},
+    ]
+  }), 200);
+}
+function initMapDirectionFinal(){
+  makeMap('map-direction-final', COORDS.destination, 3);
+  setTimeout(()=>drawWalkGuidance('map-direction-final', walkRoute(COORDS.dropoff, COORDS.destination), {
+    current: COORDS.dropoff,
+    markers:[{lat:COORDS.destination.lat,lng:COORDS.destination.lng,label:'도착',color:'#d12020'}]
+  }), 200);
+}
+
+async function fetchKakaoDirections(origin, destination, mode){
+  if(KAKAO_REST_API_KEY === "PUT_REST_API_KEY_HERE"){
+    return mode==='walking' ? walkRoute(origin,destination) : driveRoute(origin,destination);
+  }
+  return mode==='walking' ? walkRoute(origin,destination) : driveRoute(origin,destination);
+}
+
+window.addEventListener('load', ()=>{ initMapOverview(); });
+</script>
+</body>
+</html>

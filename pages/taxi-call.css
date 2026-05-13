@@ -3,14 +3,20 @@
    ========================================= */
 
 .call-screen {
-  width: 100%;
-  max-width: 402px;
-  height: 100svh;
-  max-height: 874px;
-  margin: 0 auto;
+  width: 402px;
+  height: 874px;
+  flex-shrink: 0;
   position: relative;
   overflow: hidden;
   background: #dce9f1;
+  border-radius: 40px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.35);
+}
+@media (max-width: 480px) {
+  .call-screen {
+    width: 100vw; height: 100vh;
+    border-radius: 0; box-shadow: none;
+  }
 }
 
 .map-container {

@@ -15,10 +15,20 @@
 
 .app {
   position: relative;
-  width: 100%;
-  height: 100%;
+  width: 402px;
+  height: 874px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  border-radius: 40px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.35);
+}
+@media (max-width: 480px) {
+  .app {
+    width: 100vw; height: 100vh;
+    border-radius: 0; box-shadow: none;
+  }
 }
 
 /* =========================================

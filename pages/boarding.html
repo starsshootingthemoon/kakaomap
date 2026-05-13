@@ -1,554 +1,77 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-<title>접근성 택시 호출</title>
-<style>
-:root{--pri:#3182F6;--pri-l:#EBF3FF;--pri-d:#1B64DA;--txt:#1A1A1A;--txt2:#999;--brd:#E5E7EB;--grn:#34C759;--red:#E24B4A;--r:14px}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Pretendard','Apple SD Gothic Neo',sans-serif;background:#F0F0F0;min-height:100vh;display:flex;justify-content:center;padding:16px 0;-webkit-font-smoothing:antialiased}
-.phone{width:375px;height:740px;background:#fff;border-radius:36px;border:2px solid #D0D0D0;overflow:hidden;position:relative;box-shadow:0 8px 40px rgba(0,0,0,.08)}
-.scr{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .25s}
-.scr.on{opacity:1;pointer-events:auto}
-.sb{height:30px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;font-size:12px;font-weight:600;color:var(--txt);flex-shrink:0}
-.hd{padding:10px 22px 6px;display:flex;align-items:center;gap:8px;flex-shrink:0}
-.hd h1{font-size:18px;font-weight:600;color:var(--txt)}
-.bd{flex:1;display:flex;flex-direction:column;padding:0 22px;overflow-y:auto;overflow-x:hidden}
-.bd-c{align-items:center}
-.sp{flex:1}
-.pt{font-size:26px;font-weight:700;color:var(--txt);line-height:1.3}
-.ps{font-size:14px;color:var(--txt2);margin-top:5px}
-.bk{width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:none;border:none;cursor:pointer;padding:0}
-.bk svg{width:20px;height:20px;fill:none;stroke:var(--txt);stroke-width:2.5}
-.btn-p{display:block;width:100%;padding:17px 0;border:none;border-radius:var(--r);background:var(--pri);color:#fff;font-size:16px;font-weight:600;text-align:center;cursor:pointer;margin-bottom:8px}
-.btn-p:active{background:var(--pri-d)}
-.btn-s{display:block;width:100%;padding:15px 0;border:1.5px solid var(--brd);border-radius:var(--r);background:#fff;color:#777;font-size:15px;font-weight:500;text-align:center;cursor:pointer;margin-bottom:8px}
-.btn-s:active{background:#F8F8F8}
-.ba{width:100%;padding-bottom:16px}
-.gps{position:relative;width:100px;height:100px;margin:0 auto 30px}
-.gps-o{position:absolute;inset:0;margin:auto;width:80px;height:80px;border-radius:50%;border:2.5px dashed var(--brd)}
-.gps-i{position:absolute;inset:0;margin:auto;width:44px;height:44px;border-radius:50%;border:2.5px solid var(--pri);border-top-color:transparent;animation:spin 1.2s linear infinite}
-.gps-d{position:absolute;inset:0;margin:auto;width:14px;height:14px;border-radius:50%;background:var(--pri)}
-.dots{display:flex;gap:8px;justify-content:center;margin-top:30px}
-.dot{width:8px;height:8px;border-radius:50%;background:var(--pri);animation:fd 1.4s ease-in-out infinite}
-.dot:nth-child(2){animation-delay:.3s}.dot:nth-child(3){animation-delay:.6s}
-@keyframes spin{to{transform:rotate(360deg)}}
-@keyframes fd{0%,100%{opacity:.2}50%{opacity:1}}
-@keyframes fi{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.cl{display:flex;flex-direction:column;gap:12px;padding-top:18px}
-.cd{padding:18px;border-radius:var(--r);border:1.5px solid var(--brd);background:#fff;display:flex;align-items:center;gap:16px;cursor:pointer;transition:all .2s;animation:fi .35s both}
-.cd:nth-child(2){animation-delay:.07s}.cd:nth-child(3){animation-delay:.14s}
-.cd.sel{border:2.5px solid var(--pri);box-shadow:0 2px 16px rgba(49,130,246,.1)}
-.cn{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#D1D5DB;color:#fff;font-size:16px;font-weight:700;flex-shrink:0;transition:background .2s}
-.cd.sel .cn{background:var(--pri)}
-.cm{font-size:17px;font-weight:600;color:var(--txt)}
-.ci{font-size:13px;color:var(--txt2);margin-top:4px}
-.ci .wt{transition:color .2s}
-.cd.sel .wt{color:var(--pri)}
-.vh{display:flex;align-items:center;gap:6px;padding:12px 0;opacity:.55}
-.vh span{font-size:12px;color:var(--txt2)}
-.vh svg{width:14px;height:14px;fill:none;stroke:#999;stroke-width:2.5;flex-shrink:0}
-.mb{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.mc{flex:1;position:relative;overflow:hidden;background:#EEEAE0;min-height:0}
-.map-real{width:100%;height:100%;position:absolute;top:0;left:0;z-index:1}
-.po{position:absolute;top:50%;left:50%;transform:translate(-50%,calc(-100% - 4px));z-index:10;pointer-events:none;display:flex;flex-direction:column;align-items:center}
-.pt2{background:var(--txt);color:#fff;font-size:11px;font-weight:600;padding:4px 12px;border-radius:5px;position:relative}
-.pt2::after{content:'';position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);border-left:5px solid transparent;border-right:5px solid transparent;border-top:5px solid var(--txt)}
-.pg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;border-radius:50%;background:rgba(49,130,246,.08);z-index:5;pointer-events:none}
-.mb-s{position:absolute;top:10px;right:10px;background:rgba(255,255,255,.92);border-radius:6px;padding:4px 9px;font-size:10px;color:#888;border:1px solid #ddd;z-index:10}
-.mb-h{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.65);color:#fff;font-size:12px;padding:6px 16px;border-radius:16px;z-index:10;white-space:nowrap}
-.bs{background:#fff;padding:14px 22px 16px;border-top:1px solid #eee;flex-shrink:0}
-.bsh{width:30px;height:3px;background:#ddd;border-radius:2px;margin:0 auto 10px}
-.bsi{display:flex;align-items:flex-start;gap:8px;background:#F7F7F7;border-radius:10px;padding:11px 14px;margin-bottom:12px}
-.bsi svg{width:14px;height:14px;fill:none;stroke:#888;stroke-width:2.5;flex-shrink:0;margin-top:1px}
-.bsi span{font-size:12px;color:#555;line-height:1.5}
-.dc{background:var(--pri);border-radius:16px;padding:16px 20px 20px;margin-top:10px}
-.dl{font-size:11px;color:rgba(255,255,255,.6);margin-bottom:12px}
-.dm{display:flex;align-items:center;gap:16px}
-.dm svg{width:54px;height:54px;flex-shrink:0}
-.dd{font-size:36px;font-weight:600;color:#fff;letter-spacing:-.03em}
-.dr{font-size:13px;color:rgba(255,255,255,.5);margin-top:3px}
-.mm{height:60px;background:#EEEAE0;border-radius:8px;overflow:hidden;position:relative;margin:12px 0 6px}
-.mm .rd{position:absolute;background:#DFDBD0}
-.mm .rh{height:3px;left:0;right:0}.mm .rv{width:3px;top:0;bottom:0}
-.vs{display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 0;font-size:13px;color:var(--grn);transition:color .3s}
-.vs.warn{color:var(--red)}
-.vs svg{width:14px;height:14px}
-.dir-status{font-size:12px;color:rgba(255,255,255,.7);margin-top:6px;padding:4px 10px;background:rgba(255,255,255,.1);border-radius:8px;text-align:center}
-.al{font-size:13px;color:var(--txt2)}
-.ai{margin:18px 0 12px}
-.ai svg{width:90px;height:120px}
-.ab{background:var(--pri-l);border-radius:12px;padding:16px 20px;width:100%;margin-bottom:16px}
-.ab p{font-size:14px;color:var(--pri);line-height:1.7}
-.it{width:100%}
-.ir{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid #F0F0F0}
-.ir:last-child{border-bottom:none}
-.il{font-size:14px;color:var(--txt2)}
-.iv{font-size:14px;font-weight:600;color:var(--txt)}
-.iv-l{font-size:17px;letter-spacing:.04em}
-.lm{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);font-size:11px;color:#bbb;white-space:nowrap}
-@media(max-width:390px){.phone{width:100%;height:100vh;height:100dvh;border-radius:0;border:none}}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>탑승 보조</title>
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="boarding.css">
 </head>
 <body>
-<div class="phone">
 
-<div class="scr on" id="s-load">
-  <div class="sb"><span>9:41</span><span>5G</span></div>
-  <div class="hd"><h1>현재 위치 확인 중</h1></div>
-  <div class="bd bd-c" style="justify-content:center">
-    <div class="gps"><div class="gps-o"></div><div class="gps-i"></div><div class="gps-d"></div></div>
-    <p style="font-size:18px;font-weight:600;color:var(--txt);text-align:center">위치를 찾고 있습니다</p>
-    <p style="font-size:14px;color:var(--txt2);text-align:center;margin-top:6px">잠시만 기다려 주세요</p>
-    <div class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
-    <p class="lm" id="lm"></p>
-    <div class="sp"></div>
-    <p style="font-size:12px;color:#ccc;padding-bottom:20px">접근성 모드</p>
-  </div>
-</div>
+  <div id="boarding-screen" class="boarding-screen is-wrong">
 
-<div class="scr" id="s-rec">
-  <div class="sb"><span>9:41</span><span>5G</span></div>
-  <div style="padding:12px 22px 0"><p class="pt">어디서 탈까요?</p><p class="ps" id="rec-sub">정차 가능한 승차 위치 3곳을 찾아봤어요</p></div>
-  <div class="bd">
-    <div class="cl" id="pl"></div>
-    <div class="vh"><svg viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg><span>선택한 위치 정보를 음성으로 안내합니다</span></div>
-    <div class="sp"></div>
-    <div class="ba"><button class="btn-p" id="b-sel">이 위치 선택하기</button><button class="btn-s" id="b-adj">직접 조정하기</button></div>
-  </div>
-</div>
+    <!-- 지도 배경 -->
+    <div class="map-wrap" aria-hidden="true">
+      <img
+        id="map-bg"
+        class="map-bg"
+        src="https://www.figma.com/api/mcp/asset/9b05a7f2-fd48-475c-aa27-2a9048db8fb3"
+        alt=""
+      >
+      <!-- 오류 상태 반투명 빨간 오버레이 -->
+      <div class="wrong-overlay" aria-hidden="true"></div>
+    </div>
 
-<div class="scr" id="s-map">
-  <div class="sb"><span>9:41</span><span>5G</span></div>
-  <div class="hd"><button class="bk" id="b-mb"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button><h1>위치 조정</h1></div>
-  <div class="mb">
-    <div class="mc"><div class="map-real" id="kmap"></div>
-      <div class="po"><div class="pt2">출발</div><svg width="14" height="18" viewBox="0 0 12 15" style="margin-top:3px"><path d="M6 0C2.7 0 0 2.7 0 6c0 4.5 6 9 6 9s6-4.5 6-9c0-3.3-2.7-6-6-6z" fill="#3182F6"/><circle cx="6" cy="5.5" r="2.5" fill="#fff"/></svg></div>
-      <div class="pg"></div><span class="mb-s">느린 이동</span><span class="mb-h">지도를 움직여 위치를 맞추세요</span>
-    </div>
-    <div class="bs"><div class="bsh"></div>
-      <div class="bsi"><svg viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg><span id="m-addr">위치 정보를 불러오는 중...</span></div>
-      <button class="btn-p" id="b-cf">이 위치로 출발지 확정</button><button class="btn-s" id="b-rc">현재 위치로 돌아가기</button>
-    </div>
-  </div>
-</div>
+    <!-- 현재위치 마커 (CSS) -->
+    <div class="loc-marker" aria-hidden="true">
+      <div class="pulse pulse-lg"></div>
+      <div class="pulse pulse-md"></div>
+      <div class="pulse pulse-sm"></div>
+      <div class="loc-dot"></div>
+      <div class="loc-arrow"></div>
+    </div>
 
-<div class="scr" id="s-dir">
-  <div class="sb"><span>9:41</span><span>5G</span></div>
-  <div class="hd"><button class="bk" id="b-db"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button><h1 id="dht">승차 위치로 이동</h1></div>
-  <div class="bd">
-    <div class="dc"><p class="dl" id="dlc">현위치 기반</p>
-      <div class="dm"><svg viewBox="0 0 52 52" fill="none"><path d="M26 44V14" stroke="#fff" stroke-width="4.5" stroke-linecap="round"/><path d="M12 24l14-14 14 14" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg><div><p class="dd" id="dds">0m</p><p class="dr" id="ddr">승차 위치 방향</p></div></div>
-      <p class="dir-status" id="d-status">경로 준비 중...</p>
-    </div>
-    <div class="mm"><div class="rd rh" style="top:50%"></div><div class="rd rv" style="left:44%"></div><svg width="3" height="24" viewBox="0 0 3 24" style="position:absolute;top:10%;left:44%;transform:translateX(-50%);z-index:2"><line x1="1.5" y1="0" x2="1.5" y2="24" stroke="#3182F6" stroke-width="2.5" stroke-dasharray="3 2.5"/></svg><div style="position:absolute;top:8%;left:44%;transform:translate(-50%,-50%);width:8px;height:8px;border-radius:50%;background:#3182F6;border:2px solid #fff;z-index:3"></div><svg style="position:absolute;top:68%;left:44%;transform:translate(-50%,-50%);z-index:3" width="10" height="12" viewBox="0 0 10 12"><path d="M5 0C2.2 0 0 2.2 0 5c0 3.8 5 7 5 7s5-3.2 5-7c0-2.8-2.2-5-5-5z" fill="#E24B4A"/><circle cx="5" cy="4.5" r="2" fill="#fff"/></svg></div>
-    <div class="vs" id="vib-row"><svg viewBox="0 0 20 20" fill="none" stroke="#34C759" stroke-width="2"><rect x="3" y="3" width="14" height="14" rx="2"/><path d="M7 10h6"/></svg><span id="vib-txt">방향 맞음 — 짧은 진동</span></div>
-    <div class="sp"></div><div class="ba"><button class="btn-s" id="b-end">안내 종료</button></div>
-  </div>
-</div>
+    <!-- 택시 출발 핀 (오류 상태에서만) -->
+    <div class="taxi-pin" aria-hidden="true">
+      <div class="pin-chip">출발</div>
+      <div class="pin-stem"></div>
+      <div class="pin-foot"></div>
+    </div>
 
-<div class="scr" id="s-arr">
-  <div class="sb"><span>9:41</span><span>5G</span></div>
-  <div style="padding:10px 22px 0"><p class="al">승차 위치 도착</p><p class="pt" style="font-size:22px;margin-top:2px">승차 위치에 도착했습니다</p><p class="ps" id="a-name">승차 위치</p></div>
-  <div class="bd bd-c">
-    <div class="ai"><svg viewBox="0 0 80 110" fill="none"><path d="M40 6l5 5-5 5-5-5z" fill="#3182F6" opacity=".2"/><path d="M40 0l7 7-7 7-7-7z" fill="#3182F6" opacity=".4"/><rect x="16" y="22" width="48" height="78" rx="14" fill="#E8E8E8" stroke="#C0C0C0" stroke-width="1.5"/><rect x="20" y="28" width="40" height="66" rx="10" fill="#3182F6"/><rect x="24" y="32" width="32" height="24" rx="5" fill="#7AB3FA"/><rect x="24" y="72" width="32" height="18" rx="5" fill="#7AB3FA"/><rect x="30" y="60" width="20" height="8" rx="3" fill="#FFD60A"/><circle cx="28" cy="36" r="2" fill="#B5D4F4"/><circle cx="52" cy="36" r="2" fill="#B5D4F4"/><rect x="12" y="40" width="5" height="14" rx="2.5" fill="#C0C0C0"/><rect x="63" y="40" width="5" height="14" rx="2.5" fill="#C0C0C0"/><rect x="12" y="72" width="5" height="14" rx="2.5" fill="#C0C0C0"/><rect x="63" y="72" width="5" height="14" rx="2.5" fill="#C0C0C0"/></svg></div>
-    <div class="ab"><p>이 위치에서 택시를 기다려 주세요</p><p>택시는 약 <strong>3분</strong> 후 도착합니다</p></div>
-    <div class="it"><div class="ir"><span class="il">차량번호</span><span class="iv iv-l">32바 7749</span></div><div class="ir" style="border:none"><span class="il">차종</span><span class="iv">흰색 쏘나타</span></div></div>
-    <div class="sp"></div><div class="ba"><button class="btn-p">기사에게 위치 알리기</button></div>
-  </div>
-</div>
+    <!-- 상태 배너 -->
+    <div
+      id="alert-banner"
+      class="alert-banner"
+      role="alert"
+      aria-live="assertive"
+      aria-atomic="true"
+    >
+      <div class="banner-inner">
+        <div class="warn-icon" aria-hidden="true">
+          <svg viewBox="0 0 60 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M30 4L57 52H3L30 4Z"
+              stroke="white" stroke-width="3.5"
+              stroke-linejoin="round" fill="none"/>
+            <rect x="27.5" y="20" width="5" height="16" rx="2.5" fill="white"/>
+            <circle cx="30" cy="44" r="3" fill="white"/>
+          </svg>
+        </div>
+        <p id="banner-text" class="banner-text">탑승 위치와 현위치가<br>반대입니다</p>
+      </div>
+    </div>
 
-</div>
-<script>
-(function(){
-'use strict';
-var KEY='93fb3b70693c7f3aba7c97dd76479fd7';
-var TMAP_KEY='ewuHf80duw1GifgLJa0T493eeglXMUyz2eCDDbfo';
-var loc=null,places=[],si=0,kok=false,mi=null,done=false;
-var target=null;
-var routePoints=[];
-var watchId=null;
-var offRouteStart=0;
-var lastVibTime=0;
-var isFallbackRoute=false;
+  </div>
 
-function $(s){return document.querySelector(s)}
-function $$(s){return document.querySelectorAll(s)}
+  <!-- 스크린리더 안내 -->
+  <div
+    class="sr-only"
+    id="sr-announce"
+    role="status"
+    aria-live="assertive"
+    aria-atomic="true"
+  ></div>
 
-function go(id){
-  $$('.scr').forEach(function(s){s.classList.remove('on')});
-  var t=$('#s-'+id);if(t)t.classList.add('on');
-  if(id==='map') scheduleMapInit();
-  if(id==='dir') iDir();
-}
-
-function gd(a,b,c,d){
-  var R=6371e3,x=(c-a)*Math.PI/180,y=(d-b)*Math.PI/180;
-  var z=Math.sin(x/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(y/2)**2;
-  return Math.round(R*2*Math.atan2(Math.sqrt(z),Math.sqrt(1-z)));
-}
-
-function vibrateSafe(pattern){
-  if(navigator.vibrate) navigator.vibrate(pattern);
-}
-
-function stopWatch(){
-  if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null}
-}
-
-// ── GPS ──
-function iGPS(){
-  $('#lm').textContent='GPS 신호 수신 중...';
-  if(!navigator.geolocation){loc={lat:37.5665,lng:126.978};oLoc();return}
-  navigator.geolocation.getCurrentPosition(function(p){
-    loc={lat:p.coords.latitude,lng:p.coords.longitude};
-    $('#lm').textContent='위치 확인 완료, 주변 탐색 중...';oLoc();
-  },function(){
-    $('#lm').textContent='기본 위치 사용';loc={lat:37.5665,lng:126.978};oLoc();
-  },{timeout:8000,enableHighAccuracy:true,maximumAge:0});
-  setTimeout(function(){if(!loc){loc={lat:37.5665,lng:126.978};oLoc()}},9000);
-}
-
-// ── Kakao SDK ──
-function lK(){
-  var s=document.createElement('script');
-  s.src='https://dapi.kakao.com/v2/maps/sdk.js?appkey='+KEY+'&libraries=services&autoload=false';
-  s.onload=function(){
-    if(window.kakao&&window.kakao.maps){
-      window.kakao.maps.load(function(){kok=true;console.log('Kakao OK');if(loc&&!done)sP()});
-    }
-  };
-  s.onerror=function(){console.log('SDK fail');if(loc&&!done)fb()};
-  document.head.appendChild(s);
-}
-
-function oLoc(){
-  if(kok&&!done){sP();return}
-  var w=setInterval(function(){if(kok){clearInterval(w);if(!done)sP()}},300);
-  setTimeout(function(){clearInterval(w);if(!done)fb()},7000);
-}
-
-// ── Search Places ──
-function sP(){
-  if(done)return;done=true;
-  var all=[],pos=new kakao.maps.LatLng(loc.lat,loc.lng),ps=new kakao.maps.services.Places();
-  var kws=['편의점','지하철역 출구','버스정류장'],cnt=0;
-  kws.forEach(function(kw){
-    ps.keywordSearch(kw,function(data,st){
-      cnt++;
-      if(st===kakao.maps.services.Status.OK){
-        data.forEach(function(d){
-          var dist=parseInt(d.distance)||gd(loc.lat,loc.lng,+d.y,+d.x);
-          if(dist<=500)all.push({name:d.place_name+' 앞',dist:dist,walk:Math.max(1,Math.ceil(dist/67)),lat:+d.y,lng:+d.x,addr:d.road_address_name||d.address_name});
-        });
-      }
-      if(cnt>=kws.length){
-        if(all.length===0){fbGeo();return}
-        all.sort(function(a,b){return a.dist-b.dist});
-        var seen={},u=[];
-        all.forEach(function(r){var k=r.lat.toFixed(4)+','+r.lng.toFixed(4);if(!seen[k]&&u.length<3){seen[k]=true;u.push(r)}});
-        places=u.length?u:all.slice(0,3);
-        rC();setTimeout(function(){go('rec')},500);
-      }
-    },{location:pos,radius:500,sort:kakao.maps.services.SortBy.DISTANCE,size:5});
-  });
-}
-
-function fbGeo(){
-  if(!kok){fb();return}
-  var gc=new kakao.maps.services.Geocoder();
-  gc.coord2Address(loc.lng,loc.lat,function(r,st){
-    var b='현재 위치';
-    if(st===kakao.maps.services.Status.OK&&r[0])b=r[0].road_address?r[0].road_address.address_name:r[0].address.address_name;
-    places=[{name:b+' 앞',dist:10,walk:1,lat:loc.lat,lng:loc.lng,addr:b},{name:b+' 건너편',dist:30,walk:1,lat:loc.lat+.0003,lng:loc.lng,addr:b},{name:b+' 사거리',dist:60,walk:2,lat:loc.lat,lng:loc.lng+.0005,addr:b}];
-    rC();setTimeout(function(){go('rec')},500);
-  });
-}
-
-function fb(){
-  done=true;
-  places=[{name:'현재 위치 근처',dist:10,walk:1,lat:loc.lat,lng:loc.lng,addr:'현재 위치'},{name:'도로변 30m 지점',dist:30,walk:1,lat:loc.lat+.0003,lng:loc.lng,addr:'부근'},{name:'큰 도로 교차로',dist:70,walk:2,lat:loc.lat+.0005,lng:loc.lng+.0003,addr:'부근'}];
-  rC();setTimeout(function(){go('rec')},500);
-}
-
-// ── Render Cards ──
-function rC(){
-  var el=$('#pl');if(!el)return;el.innerHTML='';si=0;
-  $('#rec-sub').textContent='정차 가능한 승차 위치 '+places.length+'곳을 찾아봤어요';
-  places.forEach(function(p,i){
-    var c=document.createElement('div');c.className='cd'+(i===0?' sel':'');
-    c.innerHTML='<div class="cn">'+(i+1)+'</div><div><div class="cm">'+p.name+'</div><div class="ci">'+p.dist+'m · <span class="wt">도보 '+p.walk+'분</span></div></div>';
-    c.onclick=function(){si=i;$$('.cd').forEach(function(x,j){j===si?x.classList.add('sel'):x.classList.remove('sel')})};
-    el.appendChild(c);
-  });
-}
-
-// ── Map Init (fix #3) ──
-function scheduleMapInit(){
-  requestAnimationFrame(function(){
-    requestAnimationFrame(function(){
-      setTimeout(iMap,80);
-    });
-  });
-}
-
-function iMap(){
-  var c=document.getElementById('kmap');
-  if(!c||!kok||!loc){
-    var s=places[si]||{name:'위치 정보 없음',dist:0};
-    $('#m-addr').textContent=s.name+', '+s.dist+'m, 승차 가능';
-    return;
-  }
-  // check container rendered
-  if(c.clientWidth===0||c.clientHeight===0){
-    setTimeout(iMap,100);return;
-  }
-  // reuse existing map
-  if(mi){
-    try{
-      mi.relayout();
-      var ct=places[si]?new kakao.maps.LatLng(places[si].lat,places[si].lng):new kakao.maps.LatLng(loc.lat,loc.lng);
-      mi.setCenter(ct);
-    }catch(e){console.log('relayout err:',e)}
-    return;
-  }
-  try{
-    var startPos=places[si]?new kakao.maps.LatLng(places[si].lat,places[si].lng):new kakao.maps.LatLng(loc.lat,loc.lng);
-    var map=new kakao.maps.Map(c,{center:startPos,level:3});
-    mi=map;
-    // blue dot for current location
-    var dot=document.createElement('div');dot.style.cssText='width:14px;height:14px;background:#3182F6;border-radius:50%;border:3px solid #fff;box-shadow:0 0 8px rgba(49,130,246,.4)';
-    new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(loc.lat,loc.lng),content:dot,map:map,zIndex:3});
-    // geocoder for address
-    var gc=new kakao.maps.services.Geocoder();
-    function ua(){
-      var p=map.getCenter(),d=gd(loc.lat,loc.lng,p.getLat(),p.getLng());
-      gc.coord2Address(p.getLng(),p.getLat(),function(r,s){
-        if(s===kakao.maps.services.Status.OK&&r[0]){
-          var a=r[0].road_address?r[0].road_address.address_name:r[0].address.address_name;
-          $('#m-addr').textContent=a+', '+d+'m, 승차 가능';
-        }
-      });
-    }
-    kakao.maps.event.addListener(map,'idle',ua);
-    setTimeout(function(){map.relayout();map.setCenter(startPos);ua()},150);
-    console.log('Map init OK');
-  }catch(e){
-    console.log('Map err:',e);
-    $('#m-addr').textContent='지도 로딩 실패 ('+location.origin+')';
-  }
-}
-
-// ── TMAP Route (fix #1) ──
-function fetchTmapRoute(cb){
-  if(!TMAP_KEY||!loc||!target){cb(null);return}
-  var body={
-    startX:String(loc.lng),startY:String(loc.lat),
-    endX:String(target.lng),endY:String(target.lat),
-    startName:encodeURIComponent('현재 위치'),
-    endName:encodeURIComponent(target.name||'승차 위치'),
-    reqCoordType:'WGS84GEO',resCoordType:'WGS84GEO',
-    searchOption:'30',sort:'custom'
-  };
-  fetch('https://apis.openapi.sk.com/tmap/routes/pedestrian?version=1',{
-    method:'POST',
-    headers:{'Accept':'application/json','Content-Type':'application/json','appKey':TMAP_KEY},
-    body:JSON.stringify(body)
-  }).then(function(r){return r.json()}).then(function(data){
-    if(!data.features||data.features.length===0){cb(null);return}
-    var pts=[];
-    data.features.forEach(function(f){
-      if(f.geometry.type==='LineString'){
-        f.geometry.coordinates.forEach(function(c){
-          pts.push({lng:c[0],lat:c[1]});
-        });
-      }
-    });
-    cb(pts.length>0?pts:null);
-  }).catch(function(e){
-    console.log('TMAP error:',e);cb(null);
-  });
-}
-
-// ── Direction (fix #1,#4) ──
-function iDir(){
-  var t=target||(places[si]?places[si]:null);
-  if(!t)return;
-  target=t;
-
-  var shortName=(t.name||'').replace(' 앞','');
-  $('#dht').textContent=shortName+' 앞으로';
-  $('#dlc').textContent='현위치: '+(t.addr||'현재 위치');
-  var initDist=gd(loc.lat,loc.lng,t.lat,t.lng);
-  $('#dds').textContent=initDist+'m';
-  $('#ddr').textContent='승차 위치 방향';
-  $('#d-status').textContent='경로 준비 중...';
-  setVib('경로 탐색 중',false);
-
-  routePoints=[];isFallbackRoute=false;offRouteStart=0;
-  stopWatch();
-
-  // get fresh GPS then fetch route
-  navigator.geolocation.getCurrentPosition(function(p){
-    loc={lat:p.coords.latitude,lng:p.coords.longitude};
-    fetchTmapRoute(function(pts){
-      if(pts&&pts.length>0){
-        routePoints=pts;isFallbackRoute=false;
-        $('#d-status').textContent='경로를 따라 이동 중';
-        setVib('방향 맞음 — 짧은 진동',false);
-      }else{
-        routePoints=[];isFallbackRoute=true;
-        $('#d-status').textContent='임시 직선거리 안내 중';
-        setVib('직선거리 기반 안내',false);
-      }
-      startWatch();
-    });
-  },function(){
-    // GPS fail — fallback straight line
-    routePoints=[];isFallbackRoute=true;
-    $('#d-status').textContent='임시 직선거리 안내 중';
-    setVib('위치 정확도 낮음',true);
-    startWatch();
-  },{timeout:5000,enableHighAccuracy:true});
-}
-
-function startWatch(){
-  stopWatch();
-  watchId=navigator.geolocation.watchPosition(function(p){
-    var now={lat:p.coords.latitude,lng:p.coords.longitude};
-    var acc=p.coords.accuracy||999;
-    loc=now;
-    var distToTarget=gd(now.lat,now.lng,target.lat,target.lng);
-    $('#dds').textContent=distToTarget+'m';
-
-    // Arrival check: 15m and accuracy < 35m
-    if(distToTarget<=15&&acc<=35){
-      handleArrival();return;
-    }
-    if(distToTarget<=30){
-      $('#d-status').textContent='도착 근처';
-      setVib('도착 근처',false);
-      return;
-    }
-    if(acc>35){
-      $('#d-status').textContent='위치 정확도 낮음';
-      setVib('위치 정확도 낮음',true);
-      return;
-    }
-
-    if(isFallbackRoute){
-      $('#d-status').textContent='임시 직선거리 안내 중';
-      setVib('직선거리 기반 안내',false);
-      throttledVib([120]);
-      return;
-    }
-
-    // Route-based check
-    var closest=findClosest(now);
-    if(closest.dist>25){
-      // Off route
-      if(offRouteStart===0) offRouteStart=Date.now();
-      var offSec=(Date.now()-offRouteStart)/1000;
-      if(offSec>30){
-        $('#d-status').textContent='경로에서 벗어났을 수 있어요';
-        setVib('경로 이탈 — 방향 확인 필요',true);
-        throttledVib([400,120,400,120,400,120,700]);
-      }else if(offSec>10){
-        $('#d-status').textContent='방향 확인 중';
-        setVib('경로에서 벗어났을 수 있어요',true);
-        throttledVib([250,100,250,100,500]);
-      }else{
-        $('#d-status').textContent='방향 확인 중';
-        setVib('방향 확인 중',false);
-      }
-    }else{
-      offRouteStart=0;
-      $('#d-status').textContent='경로를 따라 이동 중';
-      setVib('방향 맞음 — 짧은 진동',false);
-      throttledVib([120]);
-    }
-  },function(){
-    $('#d-status').textContent='위치 정확도 낮음';
-    setVib('GPS 신호 약함',true);
-  },{enableHighAccuracy:true,maximumAge:2000,timeout:10000});
-}
-
-function findClosest(pos){
-  var minD=Infinity,minIdx=0;
-  routePoints.forEach(function(rp,i){
-    var d=gd(pos.lat,pos.lng,rp.lat,rp.lng);
-    if(d<minD){minD=d;minIdx=i}
-  });
-  return{dist:minD,idx:minIdx};
-}
-
-function throttledVib(pattern){
-  var now=Date.now();
-  if(now-lastVibTime<3000)return;
-  lastVibTime=now;
-  vibrateSafe(pattern);
-}
-
-function setVib(text,isWarn){
-  var row=$('#vib-row'),txt=$('#vib-txt');
-  if(txt)txt.textContent=text;
-  if(row){isWarn?row.classList.add('warn'):row.classList.remove('warn')}
-}
-
-function handleArrival(){
-  stopWatch();
-  vibrateSafe([150,80,150]);
-  if(target)$('#a-name').textContent=target.name||'승차 위치';
-  go('arr');
-}
-
-// ── Events ──
-function bind(){
-  // select recommended place → set target → direction
-  $('#b-sel').onclick=function(){
-    target=places[si]||null;
-    go('dir');
-  };
-  // go to map adjust
-  $('#b-adj').onclick=function(){go('map')};
-  // confirm from map → set target from map center → direction
-  $('#b-cf').onclick=function(){
-    if(mi&&kok){
-      var center=mi.getCenter();
-      target={
-        name:($('#m-addr').textContent||'').split(',')[0]||'직접 지정한 위치',
-        lat:center.getLat(),lng:center.getLng(),
-        addr:$('#m-addr').textContent,
-        custom:true
-      };
-    }else{
-      target=places[si]||{name:'선택한 위치',lat:loc.lat,lng:loc.lng,addr:'현재 위치'};
-    }
-    go('dir');
-  };
-  // recenter map
-  $('#b-rc').onclick=function(){
-    if(mi&&loc&&window.kakao){
-      mi.relayout();mi.setCenter(new kakao.maps.LatLng(loc.lat,loc.lng));
-    }
-  };
-  // back from map
-  $('#b-mb').onclick=function(){go('rec')};
-  // back from direction — stop watch
-  $('#b-db').onclick=function(){stopWatch();go('rec')};
-  // end nav — stop watch → arrival
-  $('#b-end').onclick=function(){
-    stopWatch();
-    if(target)$('#a-name').textContent=target.name;
-    go('arr');
-  };
-}
-
-// ── Init ──
-function init(){bind();go('load');lK();iGPS()}
-document.readyState==='loading'?document.addEventListener('DOMContentLoaded',init):init();
-})();
-</script>
+  <script src="../js/boarding.js"></script>
 </body>
 </html>

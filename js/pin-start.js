@@ -26,7 +26,7 @@ function announce(text) {
 
 /* ── 하단 시트 터치 → voice.html ──────────────────────── */
 $sheet.addEventListener('click', () => {
-  window.location.href = 'voice.html';
+  window.location.href = 'voice-interaction.html';
 });
 
 /* ── 카카오맵 초기화 ──────────────────────────────────── */
